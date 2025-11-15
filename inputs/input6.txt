@@ -1,8 +1,7 @@
-fun int doble(int x)
-    return(x + x)
-endfun
+for i in 0..10 {
+    println!(i);
+}
 
-fun int main()
-    print(doble(21));
-    return(0)
-endfun
+for j in 1..=5 {
+    println!(j);
+}

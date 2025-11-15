@@ -1,0 +1,21 @@
+Scanner
+
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(ID, "x")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(ID, "x")
+TOKEN(PLUS, "+")
+TOKEN(ID, "y")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+
+
+Scanner exitoso

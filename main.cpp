@@ -33,6 +33,8 @@ int main(int argc, const char* argv[]) {
     // Crear instancias de Scanner 
     Scanner scanner1(input.c_str());
 
+    ejecutar_scanner(&scanner1, argv[1]);
+    /*
     // Crear instancias de Parser
     Parser parser(&scanner1);
 
@@ -53,6 +55,6 @@ int main(int argc, const char* argv[]) {
     GenCodeVisitor codigo(outfile);
     codigo.generar(program);
     outfile.close();
-    
+    */
     return 0;
 }

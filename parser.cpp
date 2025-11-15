@@ -57,17 +57,17 @@ bool Parser::isAtEnd() {
 
 Program* Parser::parseProgram() {
     Program* p = new Program();
-    if(check(Token::VAR)) {
+    if(check(Token::LET)) {
         p->vdlist.push_back(parseVarDec());
         while(match(Token::SEMICOL)) {
-            if(check(Token::VAR)) {
+            if(check(Token::LET)) {
                 p->vdlist.push_back(parseVarDec());
             }
         }
     }
-    if(check(Token::FUN)) {
+    if(check(Token::FN)) {
         p->fdlist.push_back(parseFunDec());
-        while(check(Token::FUN)){
+        while(check(Token::FN)){
                 p->fdlist.push_back(parseFunDec());
             }
         }
@@ -77,7 +77,6 @@ Program* Parser::parseProgram() {
 
 VarDec* Parser::parseVarDec(){
     VarDec* vd = new VarDec();
-    match(Token::VAR);
     match(Token::ID);
     vd->type = previous->text;
     match(Token::ID);
@@ -91,7 +90,7 @@ VarDec* Parser::parseVarDec(){
 
 FunDec *Parser::parseFunDec() {
     FunDec* fd = new FunDec();
-    match(Token::FUN);
+    match(Token::FN);
     match(Token::ID);
     fd->tipo = previous->text;
     match(Token::ID);
@@ -107,7 +106,6 @@ FunDec *Parser::parseFunDec() {
     }
     match(Token::RPAREN);
     fd->cuerpo = parseBody();
-    match(Token::ENDFUN);
     return fd;
 }
 
@@ -115,14 +113,7 @@ FunDec *Parser::parseFunDec() {
 
 Body* Parser::parseBody(){
     Body* b = new Body();
-    if(check(Token::VAR)) {
-        b->declarations.push_back(parseVarDec());
-        while(match(Token::SEMICOL)) {
-            if(check(Token::VAR)) {
-                b->declarations.push_back(parseVarDec());
-            }
-        }
-    }
+    
     b->StmList.push_back(parseStm());
     while(match(Token::SEMICOL)) {
         b->StmList.push_back(parseStm());
@@ -157,31 +148,15 @@ Stm* Parser::parseStm() {
     }
 else if (match(Token::IF)) {
         e = parseCE();
-        if (!match(Token::THEN)) {
-            cout << "Error: se esperaba 'then' después de la expresión." << endl;
-            exit(1);
-        }
         tb = parseBody();
         if (match(Token::ELSE)) {
             fb = parseBody();
-        }
-        if (!match(Token::ENDIF)) {
-            cout << "Error: se esperaba 'endif' al final de la declaración de if." << endl;
-            exit(1);
         }
         a = new IfStm(e, tb, fb);
     }
     else if (match(Token::WHILE)) {
         e = parseCE();
-        if (!match(Token::DO)) {
-            cout << "Error: se esperaba 'do' después de la expresión." << endl;
-            exit(1);
-        }
         tb = parseBody();
-        if (!match(Token::ENDWHILE)) {
-            cout << "Error: se esperaba 'endwhile' al final de la declaración." << endl;
-            exit(1);
-        }
         a = new WhileStm(e, tb);
     }
     else{
@@ -236,12 +211,7 @@ Exp* Parser::parseE() {
 
 
 Exp* Parser::parseT() {
-    Exp* l = parseF();
-    if (match(Token::POW)) {
-        BinaryOp op = POW_OP;
-        Exp* r = parseF();
-        l = new BinaryExp(l, r, op);
-    }
+    Exp* l;
     return l;
 }
 

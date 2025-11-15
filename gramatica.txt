@@ -1,0 +1,27 @@
+Program ::= GlobalVarDecList  FunDecList
+GlobalVarDecList ::= GlobalVar (';' GlobalVar)* | ε
+FunDecList ::= (FunDec)+ 
+GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp
+Type ::= 'i32' | 'i64' | 'bool'
+FunDec ::= 'fn' id '(' (ParamDecList)? ')' ('->' Type)?  Body
+ParamDecList ::= ParamDec (',' ParamDec)*
+ParamDec ::= Type id
+Body ::= '{' LocalVarDecList StmList '}'
+LocalVarDecList ::= LocalVar (';' LocalVar)* | ε
+LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? 
+StmList  ::= Stm (';' Stm)*
+Stm ::= id '=' CExp | 
+        id '(' (ArgList)? ')' | 
+        'println!' '(' (ArgList)? ')' | 
+        'return' CExp | 
+        'if' CExp Body ElseOp | 
+        'while' CExp Body | 
+        'for' id 'in' CExp ('..' | '..=') CExp Body
+ElseOp ::= 'else' Body | 'else' 'if' CExp Body ElseOp | ε
+CExp ::= Exp (('<' | '<=' | '==' | '>' | '>=') Exp)?
+Exp ::= Term (('+' | '-') Term)∗
+Term ::= Factor (('*' | '/') Factor)∗
+Factor ::= id | Num | Bool | '('Exp')' | id '(' (ArgList)? ')'
+ArgList ::= CExp (',' CExp)∗
+Bool ::= 'true' | 'false'
+

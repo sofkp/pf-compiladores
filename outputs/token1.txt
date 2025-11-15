@@ -1,0 +1,30 @@
+Scanner
+
+TOKEN(LET, "let")
+TOKEN(MUT, "mut")
+TOKEN(ID, "x")
+TOKEN(COLON, ":")
+TOKEN(I32, "i32")
+TOKEN(ASSIGN, "=")
+TOKEN(NUM, "10")
+TOKEN(SEMICOL, ";")
+TOKEN(LET, "let")
+TOKEN(ID, "y")
+TOKEN(COLON, ":")
+TOKEN(BOOL, "bool")
+TOKEN(ASSIGN, "=")
+TOKEN(TRUE, "true")
+TOKEN(SEMICOL, ";")
+TOKEN(ID, "y")
+TOKEN(ASSIGN, "=")
+TOKEN(FALSE, "false")
+TOKEN(SEMICOL, ";")
+TOKEN(ID, "x")
+TOKEN(ASSIGN, "=")
+TOKEN(ID, "x")
+TOKEN(PLUS, "+")
+TOKEN(NUM, "1")
+TOKEN(SEMICOL, ";")
+
+
+Scanner exitoso

@@ -16,8 +16,11 @@ enum BinaryOp {
     MINUS_OP, 
     MUL_OP, 
     DIV_OP,
-    POW_OP,
-    LE_OP
+    LT_OP,
+    LE_OP,
+    GT_OP,
+    GE_OP,
+    EQ_OP
 };
 
 // Clase abstracta Exp
@@ -35,7 +38,7 @@ public:
     Exp* right;
     BinaryOp op;
     int accept(Visitor* visitor);
-    BinaryExp(Exp* l, Exp* r, BinaryOp op);
+    BinaryExp(Exp*, Exp*, BinaryOp);
     ~BinaryExp();
 
 };
@@ -45,7 +48,7 @@ class NumberExp : public Exp {
 public:
     int value;
     int accept(Visitor* visitor);
-    NumberExp(int v);
+    NumberExp(int);
     ~NumberExp();
 };
 
@@ -54,8 +57,17 @@ class IdExp : public Exp {
 public:
     string value;
     int accept(Visitor* visitor);
-    IdExp(string v);
+    IdExp(string);
     ~IdExp();
+};
+
+class FcallExp: public Exp {
+public:
+    string nombre;
+    vector<Exp*> argumentos;
+    int accept(Visitor* visitor);
+    FcallExp(string){};
+    ~FcallExp(){};
 };
 
 
@@ -65,34 +77,49 @@ public:
     virtual ~Stm() = 0;
 };
 
-class VarDec{
+class AssignStm: public Stm {
 public:
-    string type;
-    list<string> vars;
-    VarDec();
+    string var;
+    Exp* value;
+    AssignStm(string, Exp*);
+    ~AssignStm();
     int accept(Visitor* visitor);
-    ~VarDec();
 };
 
-
-class Body{
+class FcallStm: public Stm {
 public:
-    list<Stm*> StmList;
-    list<VarDec*> declarations;
+    FcallExp* e;
     int accept(Visitor* visitor);
-    Body();
-    ~Body();
+    FcallStm(FcallExp*);
+    ~FcallStm(){};
 };
 
+class PrintStm: public Stm {
+public:
+    vector<Exp*> argumentos;
+    PrintStm(vector<Exp*>);
+    ~PrintStm();
+    int accept(Visitor* visitor);
+};
 
-
+class ReturnStm: public Stm {
+public:
+    Exp* value;
+    ReturnStm(Exp* value){};
+    ~ReturnStm(){};
+    int accept(Visitor* visitor);
+};
 
 class IfStm: public Stm {
 public:
     Exp* condition;
-    Body* then;
-    Body* els;
-    IfStm(Exp* condition, Body* then, Body* els);
+    bool elsecond;
+    bool elseifcond;
+    Body* ifbody;
+    vector<Exp*> elseifcond;
+    Body* elsebody;
+    vector<Body*> elseifbody;
+    IfStm(Exp*, Body*, bool, bool);
     int accept(Visitor* visitor);
     ~IfStm(){};
 };
@@ -100,77 +127,76 @@ public:
 class WhileStm: public Stm {
 public:
     Exp* condition;
-    Body* b;
-    WhileStm(Exp* condition, Body* b);
+    Body* body;
+    WhileStm(Exp*, Body*);
     int accept(Visitor* visitor);
     ~WhileStm(){};
 };
 
-
-
-class AssignStm: public Stm {
+class ForStm: public Stm {
 public:
-    string id;
-    Exp* e;
-    AssignStm(string, Exp*);
-    ~AssignStm();
+    string var;
+    bool equal;
+    Exp* start;
+    Exp* finish;
+    Body* body;
+    ForStm(string, bool,Exp*, Exp*, Body*);
     int accept(Visitor* visitor);
+    ~ForStm(){};
 };
 
-class PrintStm: public Stm {
+class GlobalVarDec{
 public:
-    Exp* e;
-    PrintStm(Exp*);
-    ~PrintStm();
+    string type;
+    bool mut;
+    string name;
+    Exp* value;
+    GlobalVarDec(string type, bool mut, string name, Exp* value);
     int accept(Visitor* visitor);
+    ~GlobalVarDec();
 };
 
-
-
-
-
-
-class ReturnStm: public Stm {
+class LocalVarDec{
 public:
-    Exp* e;
-    ReturnStm(){};
-    ~ReturnStm(){};
+    string type;
+    bool mut;
+    string name;
+    Exp* value;
+    LocalVarDec(string type, bool mut, string name);
     int accept(Visitor* visitor);
+    ~LocalVarDec();
 };
 
-class FcallExp: public Exp {
+class Body{
 public:
-    string nombre;
-    vector<Exp*> argumentos;
+    list<Stm*> StmList;
+    list<LocalVarDec*> declarations;
     int accept(Visitor* visitor);
-    FcallExp(){};
-    ~FcallExp(){};
+    Body();
+    ~Body();
 };
-
-
-
 
 class FunDec{
 public:
     string nombre;
     string tipo;
-    Body* cuerpo;
+    bool retun;
+    string returntype;
+    Body* body;
     vector<string> Ptipos;
     vector<string> Pnombres;
     int accept(Visitor* visitor);
-    FunDec(){};
+    FunDec(string nombre, Body* body){};
     ~FunDec(){};
 };
 
 class Program{
 public:
-    list<VarDec*> vdlist;
+    list<GlobalVarDec*> vdlist;
     list<FunDec*> fdlist;
     Program(){};
     ~Program(){};
     int accept(Visitor* visitor);
 };
-
-
 
 #endif // AST_H

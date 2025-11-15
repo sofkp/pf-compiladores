@@ -14,32 +14,42 @@ public:
         MINUS,   // -
         MUL,     // *
         DIV,     // /
-        POW,     // **
+        LT, //<
+        LE, //<=
+        EQ, //==
+        GT, //>
+        GE, //>=
         LPAREN,  // (
         RPAREN,  // )
-        SQRT,    // sqrt
         NUM,     // Número
         ERR,     // Error
         ID,      // ID
-        LE,
-        FUN,
-        ENDFUN,
-        RETURN,
-        SEMICOL,    
-        ASSIGN,
-        PRINT,
-        IF,
-        WHILE,
-        DO,
-        THEN,
-        ENDIF,
-        ENDWHILE,
-        ELSE,
-        END,      // Fin de entrada
-        VAR,
-        COMA,
         TRUE,
-        FALSE
+        FALSE,
+        LET,
+        MUT,
+        ASSIGN, //=
+        COMA, //,
+        COLON, //:
+        SEMICOL, //;
+        IF,
+        ELSE,
+        FOR,
+        RG, //..
+        REQ, //..=
+        IN,
+        LBRACE, //{
+        RBRACE, //}
+        WHILE,
+        FN,
+        ARROW, //->
+        I32,
+        I64,
+        BOOL,
+        STATIC,
+        RETURN,
+        PRINT, //println!
+        END
     };
 
     // Atributos

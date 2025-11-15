@@ -1,0 +1,31 @@
+Scanner
+
+TOKEN(FOR, "for")
+TOKEN(ID, "i")
+TOKEN(IN, "in")
+TOKEN(NUM, "0")
+TOKEN(RG, "..")
+TOKEN(NUM, "10")
+TOKEN(LBRACE, "{")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(ID, "i")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(RBRACE, "}")
+TOKEN(FOR, "for")
+TOKEN(ID, "j")
+TOKEN(IN, "in")
+TOKEN(NUM, "1")
+TOKEN(REQ, "..=")
+TOKEN(NUM, "5")
+TOKEN(LBRACE, "{")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(ID, "j")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(RBRACE, "}")
+
+
+Scanner exitoso
