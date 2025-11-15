@@ -12,15 +12,16 @@ private:
     bool check(Token::Type ttype);   // Comprueba si el token actual es de cierto tipo, sin avanzar
     bool advance();                  // Avanza al siguiente token
     bool isAtEnd();                  // Comprueba si ya se llegó al final de la entrada
+    bool next();                  // Comprueba el tipo del siguiente token 
 public:
     Parser(Scanner* scanner);       
     Program* parseProgram();
     FunDec* parseFunDec();
     Body* parseBody();
-    VarDec* parseVarDec();
+    GlobalVarDec* parseGlobalVarDec();
+    LocalVarDec* parseLocalVarDec();
     Stm* parseStm();
     Exp* parseCE();
-    Exp* parseBE();
     Exp* parseE();
     Exp* parseT();
     Exp* parseF();

@@ -31,6 +31,17 @@ bool Parser::check(Token::Type ttype) {
     return current->type == ttype;
 }
 
+bool Parser::next(Token::Type ttype) {
+    if (!isAtEnd()) {
+        Token* temp = scanner->nextToken();
+        if (temp->type == ttype) {
+            return true
+        }
+        return false;
+    }
+    return false;
+}
+
 bool Parser::advance() {
     if (!isAtEnd()) {
         Token* temp = current;
@@ -57,12 +68,10 @@ bool Parser::isAtEnd() {
 
 Program* Parser::parseProgram() {
     Program* p = new Program();
-    if(check(Token::LET)) {
-        p->vdlist.push_back(parseVarDec());
-        while(match(Token::SEMICOL)) {
-            if(check(Token::LET)) {
-                p->vdlist.push_back(parseVarDec());
-            }
+    if(check(Token::STATIC)) {
+        p->vdlist.push_back(parseGlobalVarDec());
+        while(check(Token::STATIC)) {
+            p->vdlist.push_back(parseGlobalVarDec());
         }
     }
     if(check(Token::FN)) {
@@ -75,16 +84,48 @@ Program* Parser::parseProgram() {
     return p;
 }
 
-VarDec* Parser::parseVarDec(){
-    VarDec* vd = new VarDec();
-    match(Token::ID);
-    vd->type = previous->text;
-    match(Token::ID);
-    vd->vars.push_back(previous->text);
-    while(match(Token::COMA)) {
-        match(Token::ID);
-        vd->vars.push_back(previous->text);
+GlobalVarDec* Parser::parseGlobalVarDec(){
+    GlobalVarDec* vd = new GlobalVarDec();
+    match(Token::STATIC);
+    if(match(Token::MUT)){
+        vd->mut = true;
+    }else{
+        vd->mut = false;
     }
+    match(Token::ID);
+    vd->name = previous->text;
+    match(Token::COLON);
+
+    if(match(Token::I32) || match(Token::I64) || match(Token::I64)){
+        vd->type = previous->text;
+    }
+
+    match(Token::ASSIGN);
+    vd->value = parseCE();
+    match(Token::SEMICOL);
+    return vd;
+}
+
+LocalVarDec* Parser::parseLocalVarDec(){
+    LocalVarDec* vd = new LocalVarDec();
+    match(Token::LET);
+    if(match(Token::MUT)){
+        vd->mut = true;
+    }else{
+        vd->mut = false;
+    }
+    match(Token::ID);
+    vd->name = previous->text;
+    match(Token::COLON);
+
+    if(match(Token::I32) || match(Token::I64) || match(Token::I64)){
+        vd->type = previous->text;
+    }
+    if(match(Token::ASSIGN)){
+        vd->value = parseCE();
+    }
+    
+    match(Token::SEMICOL);
     return vd;
 }
 
@@ -92,20 +133,30 @@ FunDec *Parser::parseFunDec() {
     FunDec* fd = new FunDec();
     match(Token::FN);
     match(Token::ID);
-    fd->tipo = previous->text;
-    match(Token::ID);
     fd->nombre = previous->text;
     match(Token::LPAREN);
-    if(check(Token::ID)) {
-        while(match(Token::ID)) {
-            fd->Ptipos.push_back(previous->text);
+    if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
+        fd->Ptipos.push_back(previous->text);
+        match(Token::ID);
+        fd->Pnombres.push_back(previous->text);
+        while(match(Token::COMA)){
+            if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
+                fd->Ptipos.push_back(previous->text);
+            }
             match(Token::ID);
             fd->Pnombres.push_back(previous->text);
-            match(Token::COMA);
         }
     }
     match(Token::RPAREN);
-    fd->cuerpo = parseBody();
+    if(match(Token::ARROW)){
+        fd->return = true;
+        if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
+                fd->tipo = previous->text;
+        }
+    }else{ fd->return = false; }
+
+    fd->body = parseBody();
+
     return fd;
 }
 
@@ -113,11 +164,16 @@ FunDec *Parser::parseFunDec() {
 
 Body* Parser::parseBody(){
     Body* b = new Body();
+    match(Token::LBRACE)
+    while(check(Token::LET)){
+        b->declarations.push_back(parseLocalVarDec());
+    }
     
     b->StmList.push_back(parseStm());
     while(match(Token::SEMICOL)) {
         b->StmList.push_back(parseStm());
     }
+    match(Token::RBRACE)
     return b;
 }
 
@@ -128,16 +184,39 @@ Stm* Parser::parseStm() {
     Body* tb = nullptr;
     Body* fb = nullptr;
     if(match(Token::ID)){
-        variable = previous->text;
-        match(Token::ASSIGN);
-        e = parseCE();
-        return new AssignStm(variable,e);
+        if(check(Token::LPAREN)){
+            string nom = previous->text;
+            match(Token::LPAREN);
+            FcallExp* f = new FcallExp();
+            f->nombre = nom;
+            if(!check(Token::RPAREN)){
+                f->argumentos.push_back(parseCE());
+                while(match(Token::COMA)){
+                    f->argumentos.push_back(parseCE());
+                }
+            }
+            match(Token::RPAREN);
+            return new FcallStm(f);
+        }
+        
+        else{
+            variable = previous->text;
+            match(Token::ASSIGN);
+            e = parseCE();
+            return new AssignStm(variable,e);
+        }
     }
     else if(match(Token::PRINT)){
+        PrintStm* p;
         match(Token::LPAREN);
-        e = parseCE();
+        if(!check(Token::RPAREN)){
+            p->argumentos.push_back(parseCE());
+            while(match(Token::COMA)){
+                f->argumentos.push_back(parseCE());
+            }
+        }
         match(Token::RPAREN);
-        return new PrintStm(e);
+        return p;
     }
     else if(match(Token::RETURN)) {
         ReturnStm* r  = new ReturnStm();
@@ -146,18 +225,52 @@ Stm* Parser::parseStm() {
         match(Token::RPAREN);
         return r;
     }
-else if (match(Token::IF)) {
-        e = parseCE();
-        tb = parseBody();
-        if (match(Token::ELSE)) {
-            fb = parseBody();
+    else if (match(Token::IF)) {
+        IfStm i;
+        i->condition = parseCE();
+        i->ifbody = parseBody();
+        if (check(Token::ELSE) && next(Token::IF)) {
+            while(match(Token::ELSE) && next(Token::IF)){
+                match(Token:::IF);
+                i->elseifcond = true;
+                i->elseifcondition.push_back(parseCExp());
+                i->elseifbody.push_back(parseBody());
+            }
+            if(match(Token::ELSE)){
+                i->elsecond = true;
+                i->elsebody = parseBody();
+            }else{
+                i->elsecond = false;
+            }
+        }else if (match(Token::ELSE)){
+            i->elseifcond = false;
+            i->elsecond = true;
+            i->elsebody = parseBody();
+        }else{
+            i->elseifcond = false;
+            i->elsecond = false;
         }
-        a = new IfStm(e, tb, fb);
+        return i;
     }
     else if (match(Token::WHILE)) {
         e = parseCE();
         tb = parseBody();
         a = new WhileStm(e, tb);
+    }
+    else if (match(Token::FOR)) {
+        match(Token::ID);
+        string type = previous->text;
+        match(Token::IN);
+        bool eq;
+        Exp* start = parseCE();
+        if(match(Token::RG)){
+            eq = false;
+        }else if(match(Token::REQ)){
+            eq = true;
+        }
+        Exp* finish = parseCE();
+        Body* body = parseBody();
+        a = new ForStm(type, eq, start, finish, body);
     }
     else{
         throw runtime_error("Error sintáctico");
@@ -166,26 +279,29 @@ else if (match(Token::IF)) {
 }
 
 Exp* Parser::parseCE() {
-    Exp* l = parseBE();
+    Exp* l = parseE();
     if (match(Token::LE)) {
         BinaryOp op = LE_OP;
-        Exp* r = parseBE();
+        Exp* r = parseE();
         l = new BinaryExp(l, r, op);
     }
-    return l;
-}
-
-
-Exp* Parser::parseBE() {
-    Exp* l = parseE();
-    while (match(Token::PLUS) || match(Token::MINUS)) {
-        BinaryOp op;
-        if (previous->type == Token::PLUS){
-            op = PLUS_OP;
-        }
-        else{
-            op = MINUS_OP;
-        }
+    else if (match(Token::LT)) {
+        BinaryOp op = LT_OP;
+        Exp* r = parseE();
+        l = new BinaryExp(l, r, op);
+    }
+    else if (match(Token::GE)) {
+        BinaryOp op = GE_OP;
+        Exp* r = parseE();
+        l = new BinaryExp(l, r, op);
+    }
+    else if (match(Token::GT)) {
+        BinaryOp op = GT_OP;
+        Exp* r = parseE();
+        l = new BinaryExp(l, r, op);
+    }
+    else if (match(Token::EQ)) {
+        BinaryOp op = EQ_OP;
         Exp* r = parseE();
         l = new BinaryExp(l, r, op);
     }
@@ -195,13 +311,13 @@ Exp* Parser::parseBE() {
 
 Exp* Parser::parseE() {
     Exp* l = parseT();
-    while (match(Token::MUL) || match(Token::DIV)) {
+    while (match(Token::PLUS) || match(Token::MINUS)) {
         BinaryOp op;
-        if (previous->type == Token::MUL){
-            op = MUL_OP;
+        if (previous->type == Token::PLUS){
+            op = PLUS_OP;
         }
         else{
-            op = DIV_OP;
+            op = MINUS_OP;
         }
         Exp* r = parseT();
         l = new BinaryExp(l, r, op);
@@ -211,7 +327,18 @@ Exp* Parser::parseE() {
 
 
 Exp* Parser::parseT() {
-    Exp* l;
+    Exp* l = parseF();
+    while (match(Token::MUL) || match(Token::DIV)) {
+        BinaryOp op;
+        if (previous->type == Token::MUL){
+            op = MUL_OP;
+        }
+        else{
+            op = DIV_OP;
+        }
+        Exp* r = parseF();
+        l = new BinaryExp(l, r, op);
+    }
     return l;
 }
 

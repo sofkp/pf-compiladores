@@ -116,7 +116,7 @@ public:
     bool elsecond;
     bool elseifcond;
     Body* ifbody;
-    vector<Exp*> elseifcond;
+    vector<Exp*> elseifcondition;
     Body* elsebody;
     vector<Body*> elseifbody;
     IfStm(Exp*, Body*, bool, bool);
@@ -181,7 +181,6 @@ public:
     string nombre;
     string tipo;
     bool retun;
-    string returntype;
     Body* body;
     vector<string> Ptipos;
     vector<string> Pnombres;

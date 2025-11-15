@@ -1,14 +1,14 @@
 Program ::= GlobalVarDecList  FunDecList
-GlobalVarDecList ::= GlobalVar (';' GlobalVar)* | ε
+GlobalVarDecList ::= GlobalVar (GlobalVar)* | ε
 FunDecList ::= (FunDec)+ 
-GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp
+GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp ';'
 Type ::= 'i32' | 'i64' | 'bool'
 FunDec ::= 'fn' id '(' (ParamDecList)? ')' ('->' Type)?  Body
 ParamDecList ::= ParamDec (',' ParamDec)*
 ParamDec ::= Type id
 Body ::= '{' LocalVarDecList StmList '}'
-LocalVarDecList ::= LocalVar (';' LocalVar)* | ε
-LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? 
+LocalVarDecList ::= LocalVar (LocalVar)* | ε
+LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? ';'
 StmList  ::= Stm (';' Stm)*
 Stm ::= id '=' CExp | 
         id '(' (ArgList)? ')' | 
