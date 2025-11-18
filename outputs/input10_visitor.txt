@@ -1,0 +1,15 @@
+Codigo:
+fn main() {
+    for i in 0..5 {
+        println!(i);
+
+    }
+
+}
+
+Interprete:
+0
+1
+2
+3
+4

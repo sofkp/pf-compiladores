@@ -83,7 +83,11 @@ public:
 
 class EVALVisitor : public Visitor {
 public:
+    Program* root; 
     Environment<int> env;
+    bool returned = false;
+    int return_value = 0;
+
     void interprete(Program* program);
 
     int visit(Program* program) override;
@@ -143,7 +147,7 @@ public:
     ~GenCodeVisitor();
     
     Environment<int>* memoria;
-    unordered_map<string, bool> memoriaGlobal;
+    unordered_map<string, int> memoriaGlobal;
 
     int offset = -8;
     int labelcont = 0;

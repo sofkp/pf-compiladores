@@ -1,0 +1,10 @@
+Codigo:
+fn main() {
+    let x: i32 = 3;
+    let y: i32 = 4;
+    println!(x * y + 10 - 2);
+
+}
+
+Interprete:
+20

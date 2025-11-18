@@ -1,0 +1,11 @@
+Codigo:
+fn hola() {
+    println!(123);
+
+}
+fn main() {
+    hola();
+}
+
+Interprete:
+123

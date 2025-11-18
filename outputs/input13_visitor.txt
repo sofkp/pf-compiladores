@@ -1,0 +1,28 @@
+Codigo:
+static mut A: i32 = 10;
+static B: i64 = 3;
+
+fn cuadrado(x: i32) -> i32 {
+    return x * x;
+}
+fn main() {
+    let mut s: i32 = 0;
+    for i in 1..=5 {
+        s=s + cuadrado(i);
+
+    }
+
+    println!(s);
+
+    if s >= 50 {
+        println!(A);
+
+        } else {
+        println!(B);
+
+    }
+}
+
+Interprete:
+55
+10

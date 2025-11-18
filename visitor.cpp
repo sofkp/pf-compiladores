@@ -204,7 +204,7 @@ int PrintVisitor::visit(ForStm* stm) {
     cout << " {" <<endl;
 
     indent++;
-    if (stm->body) stm->body->accept(this);
+    stm->body->accept(this);
     indent--;
 
     tab();
@@ -219,7 +219,7 @@ int PrintVisitor::visit(WhileStm* stm) {
     stm->condition->accept(this);
     cout  << " {" << endl;
     indent++;
-    if (stm->body) stm->body->accept(this);
+    stm->body->accept(this);
     indent--;
     tab();
     cout << "}" << endl;
@@ -232,7 +232,7 @@ int PrintVisitor::visit(IfStm* stm) {
     stm->condition->accept(this);
     cout <<" {" << endl;
     indent++;
-    if (stm->ifbody) stm->ifbody->accept(this);
+    stm->ifbody->accept(this);
     indent--;
     tab();
     if(stm->elsecond) {
@@ -240,7 +240,7 @@ int PrintVisitor::visit(IfStm* stm) {
         cout << "} else {" << endl;
 
         indent++;
-        if(stm->elsebody) stm->elsebody->accept(this);
+        stm->elsebody->accept(this);
         indent--;
 
         tab();
@@ -256,13 +256,13 @@ int PrintVisitor::visit(IfStm* stm) {
 ///////////////////////////////////////////////////////////////////////////////////
 //-------EVAL VISITOR------
 void EVALVisitor::interprete(Program* programa){
-    if (programa)
-    {
-        env.add_level();
-        cout << "Interprete:" << endl;
-        programa->accept(this);
-        env.remove_level();
-    }
+    root = programa;
+    returned = false;
+    return_value = 0;
+    env.add_level();
+    cout << "Interprete:" << endl;
+    programa->accept(this);
+    env.remove_level();
     return;
 }
 int EVALVisitor::visit(Program* p) {
@@ -280,13 +280,16 @@ int EVALVisitor::visit(Program* p) {
 
 int EVALVisitor::visit(FunDec* fd) {
     env.add_level();
-    if (fd->body) fd->body->accept(this);
+    returned = false;      // <-- reiniciamos
+    return_value = 0;
+    fd->body->accept(this);
     env.remove_level();
-    return 0;
+    return return_value;
 }
 
+
 int EVALVisitor::visit(GlobalVarDec* v) {
-    int val = v->value ? v->value->accept(this) : 0;
+    int val = v->value->accept(this);
     env.add_var(v->name, val);
     return 0;
 }
@@ -299,11 +302,18 @@ int EVALVisitor::visit(LocalVarDec* v) {
 
 int EVALVisitor::visit(Body* body) {
     env.add_level();
-    for(auto d : body->declarations) d->accept(this);
-    for(auto s : body->StmList) s->accept(this);
+    for (auto d : body->declarations) {
+        if (returned) break;
+        d->accept(this);
+    }
+    for (auto s : body->StmList) {
+        if (returned) break;
+        s->accept(this);
+    }
     env.remove_level();
     return 0;
 }
+
 
 int EVALVisitor::visit(BinaryExp* exp) {
     int result;
@@ -358,8 +368,42 @@ int EVALVisitor::visit(IdExp* exp) {
 }
 
 int EVALVisitor::visit(FcallExp* exp) {
-    return 0;
+    FunDec* fun = nullptr;
+
+    for (auto f : root->fdlist) {
+        if (f->nombre == exp->nombre) {
+            fun = f;
+            break;
+        }
+    }
+
+    if (!fun) {
+        cout << "función no encontrada: " << exp->nombre << endl;
+        return 0;
+    }
+
+    env.add_level();
+
+    bool old_returned = returned;
+    int  old_retval   = return_value;
+    returned = false;
+    return_value = 0;
+
+    for (int i = 0; i < exp->argumentos.size(); i++) {
+        int val = exp->argumentos[i]->accept(this);
+        env.add_var(fun->Pnombres[i], val);
+    }
+
+    fun->body->accept(this);
+    int ret = return_value;
+
+    returned = old_returned;
+    return_value = old_retval;
+
+    env.remove_level();
+    return ret;
 }
+
 
 int EVALVisitor::visit(AssignStm* stm) {
     int val = stm->value->accept(this);
@@ -367,8 +411,7 @@ int EVALVisitor::visit(AssignStm* stm) {
     return 0;
 }
 int EVALVisitor::visit(FcallStm* stm) {
-    stm->e->accept(this);
-    return 0;
+    return stm->e->accept(this);;
 }
 
 int EVALVisitor::visit(PrintStm* stm) {
@@ -377,8 +420,16 @@ int EVALVisitor::visit(PrintStm* stm) {
 }
 
 int EVALVisitor::visit(ReturnStm* stm) {
-    return stm->value ? stm->value->accept(this) : 0;
+    returned = true;
+
+    if (stm->value)
+        return_value = stm->value->accept(this);
+    else
+        return_value = 0;
+
+    return return_value;
 }
+
 
 int EVALVisitor::visit(ForStm*stm) {
     int s = stm->start->accept(this);
@@ -545,8 +596,8 @@ int GenCodeVisitor::visit(Program* program) {
         dec->accept(this);
     }
 
-    for (auto& [var, _] : memoriaGlobal) {
-        out << var << ": .quad 0"<<endl;
+    for (auto& [var, val] : memoriaGlobal) {
+        out << var << ": .quad " << val << endl;
     }
 
     out << ".text\n";
@@ -601,26 +652,19 @@ int GenCodeVisitor::visit(FunDec* f) {
 }
 
 int GenCodeVisitor::visit(GlobalVarDec* vd) {
-    if (!entornoFuncion) {
-        memoriaGlobal[vd->name] = true;
-    } else {
-        memoria->add_var(vd->name, offset);
-        offset -= 8;
-    }
+    auto num = dynamic_cast<NumberExp*>(vd->value);
+    int val = num->value;
+    memoriaGlobal[vd->name] = val;
     return 0;
 }
 
 int GenCodeVisitor::visit(LocalVarDec* vd) {
-    if (!entornoFuncion) {
-        memoriaGlobal[vd->name] = true;
-    } else {
-        memoria->add_var(vd->name, offset);
-        if (vd->value) {
-            vd->value->accept(this);
-            out << " movq %rax, " << offset << "(%rbp)\n";
-        }
-        offset -= 8;
+    memoria->add_var(vd->name,offset);
+    if(vd->value){
+        vd->value->accept(this);
+        out << " movq %rax, " << offset << "(%rbp)\n";
     }
+    offset -= 8;
     return 0;
 }
 
@@ -647,7 +691,7 @@ int GenCodeVisitor::visit(BinaryExp* exp) {
         case MINUS_OP: out << " subq %rcx, %rax\n"; break;
         case MUL_OP:   out << " imulq %rcx, %rax\n"; break;
         case DIV_OP:   out << " cqto\n"
-                      << "idivq $rcx\n";
+                           << " idivq %rcx\n";
             break;
         case LT_OP:
             out << " cmpq %rcx, %rax\n"
@@ -701,7 +745,7 @@ int GenCodeVisitor::visit(FcallExp* exp) {
     int size = exp->argumentos.size();
     for (int i = 0; i < size; i++) {
         exp->argumentos[i]->accept(this);
-        out << " mov %rax, " << argRegs[i] <<endl;
+        out << " movq %rax, " << argRegs[i] <<endl;
     }
     out << "call " << exp->nombre << endl;
     return 0;
@@ -758,7 +802,7 @@ int GenCodeVisitor::visit(ForStm* stm) {
         out << " setle %al" << endl;
     else
         out << " setl %al" << endl;
-     out << " movzbq %al, %rax" << endl;
+    out << " movzbq %al, %rax" << endl;
     out << " cmpq $0, %rax" << endl;
     out << " je endfor_" << label << endl;
     
@@ -768,7 +812,7 @@ int GenCodeVisitor::visit(ForStm* stm) {
     out << " movq %rax, " << slot << "(%rbp)" << endl;
 
     out << " jmp for_" << label << endl;
-    out << "endfor_" << label << endl;
+    out << "endfor_" << label << ":" << endl;
     memoria->remove_level();
     return 0;
 }
@@ -791,9 +835,11 @@ int GenCodeVisitor::visit(IfStm* stm) {
     stm->condition->accept(this);
     out << " cmpq $0, %rax"<<endl;
     out << " je else_" << label << endl;
+    int a = offset;
     stm->ifbody->accept(this);
     out << " jmp endif_" << label << endl;
     out << " else_" << label << ":"<< endl;
+    offset = a;
     if (stm->elsecond) stm->elsebody->accept(this);
     out << "endif_" << label << ":"<< endl;
     return 0;

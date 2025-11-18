@@ -1,0 +1,14 @@
+Codigo:
+fn main() {
+    if 1 < 2 {
+        if 3 > 1 {
+            if 4 == 4 {
+                println!(999);
+
+                        }
+                }
+        }
+}
+
+Interprete:
+999

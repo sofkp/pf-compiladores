@@ -40,21 +40,6 @@ int main(int argc, const char* argv[]) {
     pos = base.find_last_of(".");
     if (pos != string::npos) base = base.substr(0, pos);
 
-    // ======== TOKENS ========
-    {
-        string tokenFile = "outputs/" + base + "_tokens.txt";
-        ofstream tout(tokenFile);
-        if (!tout.is_open()) return 1;
-
-        Scanner tokenScanner(input.c_str());
-        Token* t = tokenScanner.nextToken();
-        while (t->type != Token::END) {
-            tout << *t << "\n";
-            t = tokenScanner.nextToken();
-        }
-        tout << *t << "\n";
-    }
-
     // ======== SCANNER + PARSER ========
     Scanner scanner1(input.c_str());
     Scanner scanner2(input.c_str());

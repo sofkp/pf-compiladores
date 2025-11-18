@@ -1,0 +1,13 @@
+Codigo:
+static x: i32 = 10;
+static mut y: i64 = 20;
+
+fn main() {
+    let a: i32 = 5;
+    let mut b: i64 = 3;
+    println!(a + b);
+
+}
+
+Interprete:
+8

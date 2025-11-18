@@ -1,0 +1,14 @@
+Codigo:
+fn main() {
+    let x: i32 = 10;
+    if x < 5 {
+        println!(1);
+
+        } else {
+        println!(2);
+
+    }
+}
+
+Interprete:
+2

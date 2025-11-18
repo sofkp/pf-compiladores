@@ -1,0 +1,18 @@
+Codigo:
+fn main() {
+    let mut i: i32 = 0;
+    while i < 5 {
+        println!(i);
+
+        i=i + 1;
+
+    }
+
+}
+
+Interprete:
+0
+1
+2
+3
+4
