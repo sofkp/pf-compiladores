@@ -12,12 +12,11 @@ LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? ';'
 StmList  ::= Stm (';' Stm)*
 Stm ::= id '=' CExp | 
         id '(' (ArgList)? ')' | 
-        'println!' '(' (ArgList)? ')' | 
+        'println!' '(' CExp ')' | 
         'return' CExp | 
-        'if' CExp Body ElseOp | 
+        'if' CExp Body ('else' Body)?  | 
         'while' CExp Body | 
         'for' id 'in' CExp ('..' | '..=') CExp Body
-ElseOp ::= 'else' Body | 'else' 'if' CExp Body ElseOp | ε
 CExp ::= Exp (('<' | '<=' | '==' | '>' | '>=') Exp)?
 Exp ::= Term (('+' | '-') Term)∗
 Term ::= Factor (('*' | '/') Factor)∗

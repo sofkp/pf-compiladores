@@ -1,7 +1,7 @@
-for i in 0..10 {
-    println!(i);
+fn doble(x: i32) -> i32 {
+    return x * 2;
 }
 
-for j in 1..=5 {
-    println!(j);
+fn main() {
+    println!(doble(10));
 }

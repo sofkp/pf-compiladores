@@ -1,12 +1,20 @@
-fun int signo(int x)
-    if x < 5 then return(1)
-    else return(0)
-    endif
-endfun
+static mut g: i32 = 2;
 
-fun int main()
-    print(signo(3));
-    print(signo(0));
-    print(signo(10));
-    return(0)
-endfun
+fn inc(v: i32) -> i32 {
+    return v + 1;
+}
+
+fn main() {
+    let mut x: i32 = 0;
+
+    while x < 3 {
+        println!(inc(x));
+        x = x + 1;
+    }
+
+    if g > 1 {
+        println!(100);
+    } else {
+        println!(200);
+    }
+}

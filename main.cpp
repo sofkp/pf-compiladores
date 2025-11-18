@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <filesystem>
 #include "scanner.h"
 #include "parser.h"
 #include "ast.h"
@@ -9,52 +10,94 @@
 using namespace std;
 
 int main(int argc, const char* argv[]) {
-    // Verificar número de argumentos
+
     if (argc != 2) {
-        cout << "Número incorrecto de argumentos.\n";
-        cout << "Uso: " << argv[0] << " <archivo_de_entrada>" << endl;
+        cout << "Uso: " << argv[0] << " <archivo_de_entrada>\n";
         return 1;
     }
 
-    // Abrir archivo de entrada
-    ifstream infile(argv[1]);
+    string inputPath = argv[1];
+
+    // ======== Crear carpeta outputs si no existe ========
+    filesystem::create_directory("outputs");
+
+    // ======== Leer archivo ========
+    ifstream infile(inputPath);
     if (!infile.is_open()) {
-        cout << "No se pudo abrir el archivo: " << argv[1] << endl;
+        cerr << "No se pudo abrir: " << inputPath << endl;
         return 1;
     }
 
-    // Leer contenido completo del archivo en un string
     string input, line;
-    while (getline(infile, line)) {
-        input += line + '\n';
-    }
+    while (getline(infile, line))
+        input += line + "\n";
     infile.close();
 
-    // Crear instancias de Scanner 
-    Scanner scanner1(input.c_str());
+    // ======== BaseName ========
+    string base = inputPath;
+    size_t pos = base.find_last_of("/\\");
+    if (pos != string::npos) base = base.substr(pos + 1);
+    pos = base.find_last_of(".");
+    if (pos != string::npos) base = base.substr(0, pos);
 
-    ejecutar_scanner(&scanner1, argv[1]);
-    /*
-    // Crear instancias de Parser
-    Parser parser(&scanner1);
+    // ======== TOKENS ========
+    {
+        string tokenFile = "outputs/" + base + "_tokens.txt";
+        ofstream tout(tokenFile);
+        if (!tout.is_open()) return 1;
 
-    // Parsear y generar AST
-  
-    Program* program = parser.parseProgram();     
-        string inputFile(argv[1]);
-        size_t dotPos = inputFile.find_last_of('.');
-        string baseName = (dotPos == string::npos) ? inputFile : inputFile.substr(0, dotPos);
-        string outputFilename = baseName + ".s";
-        ofstream outfile(outputFilename);
-        if (!outfile.is_open()) {
-            cerr << "Error al crear el archivo de salida: " << outputFilename << endl;
-            return 1;
+        Scanner tokenScanner(input.c_str());
+        Token* t = tokenScanner.nextToken();
+        while (t->type != Token::END) {
+            tout << *t << "\n";
+            t = tokenScanner.nextToken();
         }
+        tout << *t << "\n";
+    }
 
-    cout << "Generando codigo ensamblador en " << outputFilename << endl;
-    GenCodeVisitor codigo(outfile);
-    codigo.generar(program);
-    outfile.close();
-    */
+    // ======== SCANNER + PARSER ========
+    Scanner scanner1(input.c_str());
+    Scanner scanner2(input.c_str());
+
+    ejecutar_scanner(&scanner1, "outputs/" + base + "_tokens.txt");
+
+    Parser parser(&scanner2);
+    Program* ast = nullptr;
+
+    try {
+        ast = parser.parseProgram();
+    } catch (const exception& e) {
+        cerr << "Error al parsear: " << e.what() << endl;
+        return 1;
+    }
+
+    // ======== VISITOR (IMPRESIÓN) ========
+    {
+        string visitorFile = "outputs/" + base + "_visitor.txt";
+        ofstream vout(visitorFile);
+        if (!vout.is_open()) return 1;
+
+        streambuf* old = cout.rdbuf(vout.rdbuf());
+
+        PrintVisitor pv;
+        pv.imprimir(ast);
+
+        EVALVisitor ev;
+        ev.interprete(ast);
+
+        cout.rdbuf(old);
+    }
+
+    // ======== GENCODE ========
+    {
+        string asmFile = "outputs/" + base + ".s";
+        ofstream aout(asmFile);
+        if (!aout.is_open()) return 1;
+
+        GenCodeVisitor gc(aout);
+        gc.generar(ast);
+    }
+
+    cout << "Archivos generados en /outputs\n";
     return 0;
 }

@@ -31,17 +31,6 @@ bool Parser::check(Token::Type ttype) {
     return current->type == ttype;
 }
 
-bool Parser::next(Token::Type ttype) {
-    if (!isAtEnd()) {
-        Token* temp = scanner->nextToken();
-        if (temp->type == ttype) {
-            return true
-        }
-        return false;
-    }
-    return false;
-}
-
 bool Parser::advance() {
     if (!isAtEnd()) {
         Token* temp = current;
@@ -68,95 +57,116 @@ bool Parser::isAtEnd() {
 
 Program* Parser::parseProgram() {
     Program* p = new Program();
-    if(check(Token::STATIC)) {
+    while (check(Token::STATIC)) {
         p->vdlist.push_back(parseGlobalVarDec());
-        while(check(Token::STATIC)) {
-            p->vdlist.push_back(parseGlobalVarDec());
-        }
     }
-    if(check(Token::FN)) {
+
+    while (check(Token::FN)) {
         p->fdlist.push_back(parseFunDec());
-        while(check(Token::FN)){
-                p->fdlist.push_back(parseFunDec());
-            }
-        }
+    }
+    
     cout << "Parser exitoso" << endl;
     return p;
 }
-
+    
 GlobalVarDec* Parser::parseGlobalVarDec(){
-    GlobalVarDec* vd = new GlobalVarDec();
+    bool mut;
+    string name;
+    string type;
+
     match(Token::STATIC);
-    if(match(Token::MUT)){
-        vd->mut = true;
-    }else{
-        vd->mut = false;
-    }
+    mut = match(Token::MUT);
     match(Token::ID);
-    vd->name = previous->text;
+    name = previous->text;
     match(Token::COLON);
 
-    if(match(Token::I32) || match(Token::I64) || match(Token::I64)){
-        vd->type = previous->text;
+    if(check(Token::I32)){
+        match(Token::I32); 
+        type = "i32";
+    } else if(check(Token::I64)) {
+        match(Token::I64);
+        type = "i64";
+    } else if(check(Token::BOOL)) {
+        match(Token::BOOL);
+        type = "bool";
+    } else {
+        throw runtime_error("Tipo inválido en parámetros");
     }
 
     match(Token::ASSIGN);
-    vd->value = parseCE();
+    Exp* value = parseCE();
     match(Token::SEMICOL);
-    return vd;
+
+    return new GlobalVarDec(type, mut, name, value);
 }
 
+
 LocalVarDec* Parser::parseLocalVarDec(){
-    LocalVarDec* vd = new LocalVarDec();
+    bool mut;
+    string type;
+    string name;
     match(Token::LET);
-    if(match(Token::MUT)){
-        vd->mut = true;
-    }else{
-        vd->mut = false;
-    }
+    mut = match(Token::MUT);
     match(Token::ID);
-    vd->name = previous->text;
+    name = previous->text;
     match(Token::COLON);
 
-    if(match(Token::I32) || match(Token::I64) || match(Token::I64)){
-        vd->type = previous->text;
+    if(check(Token::I32)){
+        match(Token::I32); 
+        type = "i32";
+    } else if(check(Token::I64)) {
+        match(Token::I64);
+        type = "i64";
+    } else if(check(Token::BOOL)) {
+        match(Token::BOOL);
+        type = "bool";
+    } else {
+        throw runtime_error("Tipo inválido en parámetros");
     }
+
+    Exp* e = nullptr;
     if(match(Token::ASSIGN)){
-        vd->value = parseCE();
+        e = parseCE();
     }
     
     match(Token::SEMICOL);
-    return vd;
+    return new LocalVarDec(type, mut, name, e);
 }
 
 FunDec *Parser::parseFunDec() {
-    FunDec* fd = new FunDec();
     match(Token::FN);
     match(Token::ID);
-    fd->nombre = previous->text;
+    string nombre = previous->text;
     match(Token::LPAREN);
-    if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
-        fd->Ptipos.push_back(previous->text);
+    vector<string> Pnombres;
+    vector<string> Ptipos;
+    if(check(Token::I32)|| check(Token::I64) || check(Token::BOOL)){
+        match(current->type);
+        Ptipos.push_back(previous->text);
         match(Token::ID);
-        fd->Pnombres.push_back(previous->text);
+        Pnombres.push_back(previous->text);
         while(match(Token::COMA)){
-            if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
-                fd->Ptipos.push_back(previous->text);
-            }
+            match(current->type);
+            Ptipos.push_back(previous->text);
             match(Token::ID);
-            fd->Pnombres.push_back(previous->text);
+            Pnombres.push_back(previous->text);
         }
     }
     match(Token::RPAREN);
+    bool returns = false;
+    string tipo;
     if(match(Token::ARROW)){
-        fd->return = true;
-        if(match(Token::I32)|| match(Token::I64) || match(Token::BOOL)){
-                fd->tipo = previous->text;
-        }
-    }else{ fd->return = false; }
+        returns= true;
+        match(current->type);
+        tipo = previous->text;
+    }
 
-    fd->body = parseBody();
-
+    Body* body = parseBody();
+    FunDec* fd = new FunDec(nombre,body);
+    fd->returns = returns;
+    fd->Ptipos = Ptipos;
+    fd->Pnombres = Pnombres;
+    fd->tipo = tipo;
     return fd;
 }
 
@@ -164,16 +174,18 @@ FunDec *Parser::parseFunDec() {
 
 Body* Parser::parseBody(){
     Body* b = new Body();
-    match(Token::LBRACE)
+    match(Token::LBRACE);
     while(check(Token::LET)){
         b->declarations.push_back(parseLocalVarDec());
     }
     
-    b->StmList.push_back(parseStm());
-    while(match(Token::SEMICOL)) {
+    if (!check(Token::RBRACE)) { 
         b->StmList.push_back(parseStm());
+        while (match(Token::SEMICOL)) {
+            b->StmList.push_back(parseStm());
+        }
     }
-    match(Token::RBRACE)
+    match(Token::RBRACE);
     return b;
 }
 
@@ -184,84 +196,55 @@ Stm* Parser::parseStm() {
     Body* tb = nullptr;
     Body* fb = nullptr;
     if(match(Token::ID)){
-        if(check(Token::LPAREN)){
-            string nom = previous->text;
-            match(Token::LPAREN);
-            FcallExp* f = new FcallExp();
-            f->nombre = nom;
-            if(!check(Token::RPAREN)){
+        string name = previous->text;
+
+        if (match(Token::LPAREN)) {
+            FcallExp* f = new FcallExp(name);
+            if (!check(Token::RPAREN)) {
                 f->argumentos.push_back(parseCE());
-                while(match(Token::COMA)){
+                while (match(Token::COMA)) {
                     f->argumentos.push_back(parseCE());
                 }
             }
             match(Token::RPAREN);
             return new FcallStm(f);
         }
-        
-        else{
-            variable = previous->text;
-            match(Token::ASSIGN);
-            e = parseCE();
-            return new AssignStm(variable,e);
-        }
+
+        match(Token::ASSIGN);
+        Exp* val = parseCE();
+        return new AssignStm(name, val);
     }
     else if(match(Token::PRINT)){
-        PrintStm* p;
         match(Token::LPAREN);
-        if(!check(Token::RPAREN)){
-            p->argumentos.push_back(parseCE());
-            while(match(Token::COMA)){
-                f->argumentos.push_back(parseCE());
-            }
-        }
+        e = parseCE();
         match(Token::RPAREN);
-        return p;
+        return new PrintStm(e);
     }
     else if(match(Token::RETURN)) {
-        ReturnStm* r  = new ReturnStm();
-        match(Token::LPAREN);
-        r->e = parseCE();
-        match(Token::RPAREN);
-        return r;
+        e = parseCE();
+        return new ReturnStm(e);
     }
     else if (match(Token::IF)) {
-        IfStm i;
-        i->condition = parseCE();
-        i->ifbody = parseBody();
-        if (check(Token::ELSE) && next(Token::IF)) {
-            while(match(Token::ELSE) && next(Token::IF)){
-                match(Token:::IF);
-                i->elseifcond = true;
-                i->elseifcondition.push_back(parseCExp());
-                i->elseifbody.push_back(parseBody());
-            }
-            if(match(Token::ELSE)){
-                i->elsecond = true;
-                i->elsebody = parseBody();
-            }else{
-                i->elsecond = false;
-            }
-        }else if (match(Token::ELSE)){
-            i->elseifcond = false;
-            i->elsecond = true;
-            i->elsebody = parseBody();
-        }else{
-            i->elseifcond = false;
-            i->elsecond = false;
+        Exp* condition = parseCE();
+        Body* ifbody = parseBody();
+        bool elsecond = false;
+        Body* elsebody = nullptr;
+        if(match(Token::ELSE)){
+            elsecond = true;
+            elsebody = parseBody();
         }
-        return i;
+        return new IfStm(condition, ifbody, elsecond, elsebody);
     }
     else if (match(Token::WHILE)) {
         e = parseCE();
         tb = parseBody();
-        a = new WhileStm(e, tb);
+        return new WhileStm(e, tb);
     }
     else if (match(Token::FOR)) {
         match(Token::ID);
-        string type = previous->text;
+        string var = previous->text;
         match(Token::IN);
-        bool eq;
+        bool eq = false;
         Exp* start = parseCE();
         if(match(Token::RG)){
             eq = false;
@@ -270,7 +253,7 @@ Stm* Parser::parseStm() {
         }
         Exp* finish = parseCE();
         Body* body = parseBody();
-        a = new ForStm(type, eq, start, finish, body);
+        return new ForStm(var, eq, start, finish, body);
     }
     else{
         throw runtime_error("Error sintáctico");
@@ -364,11 +347,12 @@ Exp* Parser::parseF() {
         nom = previous->text;
         if(check(Token::LPAREN)) {
             match(Token::LPAREN);
-            FcallExp* fcall = new FcallExp();
-            fcall->nombre = nom;
-            fcall->argumentos.push_back(parseCE());
-            while(match(Token::COMA)) {
+            FcallExp* fcall = new FcallExp(nom);
+            if(!check(Token::RPAREN)){
                 fcall->argumentos.push_back(parseCE());
+                while(match(Token::COMA)) {
+                    fcall->argumentos.push_back(parseCE());
+                }
             }
             match(Token::RPAREN);
             return fcall;

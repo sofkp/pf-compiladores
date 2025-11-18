@@ -1,10 +1,5 @@
-fun int suma(int a)
-    var int b;
-    b = 10;
-    return(a + b)
-endfun
-
-fun int main()
-    print(suma(5));
-    return(0)
-endfun
+fn main() {
+    for i in 3..=6 {
+        println!(i);
+    }
+}

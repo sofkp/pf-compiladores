@@ -1,0 +1,6 @@
+Codigo:
+fn int() {
+    suma(int);
+}
+
+Interprete:

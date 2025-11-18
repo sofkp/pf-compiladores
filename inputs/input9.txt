@@ -1,13 +1,7 @@
-fun int main()
-    var int a, b, c;
-    a = 3;
-    b = 4;
-    if a < b then
-        var int d;
-        d = a + b;
-        print(d)
-    else
-        print(a)
-    endif
-    return(0)
-endfun
+fn main() {
+    let mut i: i32 = 0;
+    while i < 5 {
+        println!(i);
+        i = i + 1;
+    }
+}

@@ -43,7 +43,10 @@ IdExp::IdExp(string v) : value(v) {}
 IdExp::~IdExp() {}
 
 // ------------------FcallExp ------------------
-FcallExp::FcallExp(string n) : nombre(n) {}
+FcallExp::FcallExp(string n) {
+    nombre = n;
+    argumentos = vector<Exp*>();
+}
 
 FcallExp::~FcallExp() {}
 
@@ -59,26 +62,26 @@ AssignStm::AssignStm(string variable,Exp* expresion){
 AssignStm::~AssignStm(){}
 
 // ------------------FcallStm ------------------
-FcallStm::FcallStm(Exp* expresion){
+FcallStm::FcallStm(FcallExp* expresion){
     e = expresion;
 }
 FcallStm::~FcallStm(){}
 
-// ------------------FcallStm ------------------
-PrintStm::PrintStm(vector<Exp*> expresion){
-    argumentos=expresion;
+// ------------------PrintStm ------------------
+PrintStm::PrintStm(Exp* expresion){
+    e=expresion;
 }
 PrintStm::~PrintStm(){}
 
 // ------------------ReturnStm ------------------
-ReturnStm::ReturnStm(){}
+ReturnStm::ReturnStm(Exp* v): value(v){}
 ReturnStm::~ReturnStm(){}
 
 // ------------------FcallStm ------------------
-IfStm::IfStm(Exp* c, Body* t, bool e, bool ei): condition(c), ifbody(t), elsecond(e), elseifcond(ei) {}
+IfStm::IfStm(Exp* c, Body* t, bool e, Body* el): condition(c), ifbody(t), elsecond(e), elsebody(el) {}
 IfStm::~IfStm(){}
 
-// ------------------FcallStm ------------------
+// ------------------WhileStm ------------------
 WhileStm::WhileStm(Exp* c, Body* t): condition(c), body(t) {}
 WhileStm::~WhileStm(){}
 
@@ -94,7 +97,7 @@ ForStm::~ForStm(){}
 
 
 // ------------------GlobalVarDec ------------------
-GlobalVarDec::GlobalVarDec(string t, bool m, string n, Exp* v) {
+GlobalVarDec::GlobalVarDec(string t, bool m, string n, Exp* v){
     type = t;
     mut = m;
     name = n;
@@ -103,16 +106,17 @@ GlobalVarDec::GlobalVarDec(string t, bool m, string n, Exp* v) {
 GlobalVarDec::~GlobalVarDec() {}
 
 // ------------------LocalVarDec ------------------
-LocalVarDec::LocalVarDec(string t, bool m, string n) {
+LocalVarDec::LocalVarDec(string t, bool m, string n, Exp* v){
     type = t;
     mut = m;
     name = n;
+    value = v;
 }
 LocalVarDec::~LocalVarDec() {}
 
 // ------------------Body ------------------
 Body::Body(){
-    declarations=list<VarDec*>();
+    declarations=list<LocalVarDec*>();
     StmList=list<Stm*>();
 }
 Body::~Body(){}
@@ -120,7 +124,10 @@ Body::~Body(){}
 // ------------------FunDec ------------------
 FunDec::FunDec(string n, Body* b){
     nombre=n;
-    vody=b;
+    body=b;
+    returns = false;
+    Ptipos = vector<string>();
+    Pnombres = vector<string>();
 }
 FunDec::~FunDec(){}
 
