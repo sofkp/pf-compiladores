@@ -34,6 +34,14 @@ int FcallExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 
+int StringExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+
+int StructDec::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+
 int AssignStm::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
@@ -151,6 +159,11 @@ int PrintVisitor::visit(IdExp* exp) {
     return 0;
 }
 
+int PrintVisitor::visit(StringExp* exp) {
+    cout << '"' << exp->value << '"';
+    return 0;
+}
+
 
 int PrintVisitor::visit(FcallExp* exp) {
     cout << exp->nombre << "(";
@@ -159,6 +172,18 @@ int PrintVisitor::visit(FcallExp* exp) {
         exp->argumentos[i]->accept(this);
     }
     cout << ")";
+    return 0;
+}
+
+int PrintVisitor::visit(StructDec* sd) {
+    tab();
+    cout << "struct " << sd->nombre << " {" << endl;
+    for (size_t i = 0; i < sd->fieldNames.size(); ++i) {
+        tab(); cout << "    " << sd->fieldNames[i] << ": " << sd->fieldTypes[i];
+        if (i + 1 < sd->fieldNames.size()) cout << ",";
+        cout << endl;
+    }
+    tab(); cout << "};" << endl;
     return 0;
 }
 
@@ -463,6 +488,16 @@ int EVALVisitor::visit(IfStm* stm) {
     return 0;
 }
 
+int EVALVisitor::visit(StringExp* exp) {
+    // Runtime string support not implemented in this simple evaluator.
+    return 0;
+}
+
+int EVALVisitor::visit(StructDec* sd) {
+    // Struct declarations do not produce runtime value here.
+    return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 //-------TYPECHECKER VISITOR------
 int TypeCheckerVisitor::tipe(Program *program) {
@@ -571,6 +606,14 @@ int TypeCheckerVisitor::visit(IfStm *stm) {
 
     locales = max(after_if, after_else);
 
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(StringExp* exp) {
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(StructDec* sd) {
     return 0;
 }
 
@@ -842,6 +885,29 @@ int GenCodeVisitor::visit(IfStm* stm) {
     offset = a;
     if (stm->elsecond) stm->elsebody->accept(this);
     out << "endif_" << label << ":"<< endl;
+    return 0;
+}
+
+int GenCodeVisitor::visit(StringExp* exp) {
+    int lbl = labelcont++;
+    string lab = ".LCstr" + to_string(lbl);
+
+    string s = exp->value;
+    string esc;
+    for (char c : s) {
+        if (c == '\\') esc += "\\\\";
+        else if (c == '"') esc += "\\\"";
+        else if (c == '\n') esc += "\\n";
+        else esc.push_back(c);
+    }
+
+    out << ".data\n" << lab << ": .string \"" << esc << "\"\n";
+    out << ".text\n";
+    out << " leaq " << lab << "(%rip), %rax\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(StructDec* sd) {
     return 0;
 }
 

@@ -15,8 +15,10 @@ class LocalVarDec;
 class Body;
 class BinaryExp;
 class NumberExp;
+class StringExp;
 class IdExp;
 class FcallExp;
+class StructDec;
 class AssignStm;
 class FcallStm;
 class PrintStm;
@@ -37,8 +39,10 @@ public:
 
     virtual int visit(BinaryExp* exp) = 0;
     virtual int visit(NumberExp* exp) = 0;
+    virtual int visit(StringExp* exp) = 0;
     virtual int visit(IdExp* exp) = 0;
     virtual int visit(FcallExp* exp) = 0;
+    virtual int visit(StructDec* sd) = 0;
     
     virtual int visit(AssignStm* stm) = 0;
     virtual int visit(FcallStm* stm) = 0;
@@ -62,8 +66,10 @@ public:
 
     int visit(BinaryExp* exp) override;
     int visit(NumberExp* exp) override;
+    int visit(StringExp* exp) override;
     int visit(IdExp* exp) override;
     int visit(FcallExp* exp) override;
+    int visit(StructDec* sd) override;
     
     int visit(AssignStm* stm) override;
     int visit(FcallStm* stm) override;
@@ -100,6 +106,8 @@ public:
     int visit(NumberExp* exp) override;
     int visit(IdExp* exp) override;
     int visit(FcallExp* exp) override;
+    int visit(StringExp* exp) override;
+    int visit(StructDec* sd) override;
     
     int visit(AssignStm* stm) override;
     int visit(FcallStm* stm) override;
@@ -125,6 +133,8 @@ public:
     int visit(NumberExp* exp) override;
     int visit(IdExp* exp) override;
     int visit(FcallExp* exp) override;
+    int visit(StringExp* exp) override;
+    int visit(StructDec* sd) override;
     
     int visit(AssignStm* stm) override;
     int visit(FcallStm* stm) override;
@@ -166,6 +176,8 @@ public:
     int visit(NumberExp* exp) override;
     int visit(IdExp* exp) override;
     int visit(FcallExp* exp) override;
+    int visit(StringExp* exp) override;
+    int visit(StructDec* sd) override;
     
     int visit(AssignStm* stm) override;
     int visit(FcallStm* stm) override;

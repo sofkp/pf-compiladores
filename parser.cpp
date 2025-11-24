@@ -57,6 +57,10 @@ Program* Parser::parseProgram() {
         p->vdlist.push_back(parseGlobalVarDec());
     }
 
+    while (check(Token::STRUCT)) {
+        p->sdlist.push_back(parseStructDec());
+    }
+
     while (check(Token::FN)) {
         p->fdlist.push_back(parseFunDec());
     }
@@ -81,6 +85,7 @@ GlobalVarDec* Parser::parseGlobalVarDec() {
     if(match(Token::I32)) type = "i32";
     else if(match(Token::I64)) type = "i64";
     else if(match(Token::BOOL)) type = "bool";
+    else if (match(Token::ID)) type = previous->text; // allow struct types
     else throw runtime_error("Tipo inválido en variable global");
 
     match(Token::ASSIGN);
@@ -106,6 +111,7 @@ LocalVarDec* Parser::parseLocalVarDec() {
     if(match(Token::I32)) type = "i32";
     else if(match(Token::I64)) type = "i64";
     else if(match(Token::BOOL)) type = "bool";
+    else if (match(Token::ID)) type = previous->text; // allow struct types
     else throw runtime_error("Tipo inválido en variable local");
 
     Exp* e = nullptr;
@@ -137,6 +143,7 @@ FunDec* Parser::parseFunDec() {
         if (match(Token::I32)) Ptipos.push_back("i32");
         else if (match(Token::I64)) Ptipos.push_back("i64");
         else if (match(Token::BOOL)) Ptipos.push_back("bool");
+        else if (match(Token::ID)) Ptipos.push_back(previous->text);
         else throw runtime_error("Tipo invalido");
 
         Pnombres.push_back(pname);
@@ -150,6 +157,7 @@ FunDec* Parser::parseFunDec() {
             if (match(Token::I32)) Ptipos.push_back("i32");
             else if (match(Token::I64)) Ptipos.push_back("i64");
             else if (match(Token::BOOL)) Ptipos.push_back("bool");
+            else if (match(Token::ID)) Ptipos.push_back(previous->text);
             else throw runtime_error("Tipo invalido");
 
             Pnombres.push_back(pname);
@@ -167,6 +175,7 @@ FunDec* Parser::parseFunDec() {
         if(match(Token::I32)) tipo = "i32";
         else if(match(Token::I64)) tipo = "i64";
         else if(match(Token::BOOL)) tipo = "bool";
+        else if (match(Token::ID)) tipo = previous->text;
         else throw runtime_error("Tipo invalido");
     }
 
@@ -179,6 +188,46 @@ FunDec* Parser::parseFunDec() {
     fd->Ptipos = Ptipos;
 
     return fd;
+}
+
+StructDec* Parser::parseStructDec() {
+    match(Token::STRUCT);
+    match(Token::ID);
+    string name = previous->text;
+
+    match(Token::LBRACE);
+    StructDec* sd = new StructDec(name);
+
+    if (!check(Token::RBRACE)) {
+        // parse first field
+        match(Token::ID);
+        string fname = previous->text;
+        match(Token::COLON);
+        string ftype;
+        if (match(Token::I32)) ftype = "i32";
+        else if (match(Token::I64)) ftype = "i64";
+        else if (match(Token::BOOL)) ftype = "bool";
+        else if (match(Token::ID)) ftype = previous->text;
+        else throw runtime_error("Tipo invalido en campo de struct");
+        sd->fieldNames.push_back(fname);
+        sd->fieldTypes.push_back(ftype);
+
+        while (match(Token::COMA)) {
+            match(Token::ID);
+            fname = previous->text;
+            match(Token::COLON);
+            if (match(Token::I32)) ftype = "i32";
+            else if (match(Token::I64)) ftype = "i64";
+            else if (match(Token::BOOL)) ftype = "bool";
+            else if (match(Token::ID)) ftype = previous->text;
+            else throw runtime_error("Tipo invalido en campo de struct");
+            sd->fieldNames.push_back(fname);
+            sd->fieldTypes.push_back(ftype);
+        }
+    }
+
+    match(Token::RBRACE);
+    return sd;
 }
 
 Body* Parser::parseBody() {
@@ -341,6 +390,9 @@ Exp* Parser::parseT() {
 Exp* Parser::parseF() {
     if(match(Token::NUM))
         return new NumberExp(stoi(previous->text));
+
+    if(match(Token::STRING))
+        return new StringExp(previous->text);
 
     if(match(Token::TRUE))
         return new NumberExp(1);

@@ -19,7 +19,7 @@ int main(int argc, const char* argv[]) {
     string inputPath = argv[1];
 
     // ======== Crear carpeta outputs si no existe ========
-    filesystem::create_directory("outputs");
+    std::filesystem::create_directory("outputs");
 
     // ======== Leer archivo ========
     ifstream infile(inputPath);

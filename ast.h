@@ -70,6 +70,14 @@ public:
     ~FcallExp();
 };
 
+class StringExp: public Exp {
+public:
+    string value;
+    int accept(Visitor* visitor);
+    StringExp(const string& v);
+    ~StringExp();
+};
+
 
 class Stm{
 public:
@@ -186,10 +194,21 @@ public:
     ~FunDec();
 };
 
+class StructDec {
+public:
+    string nombre;
+    vector<string> fieldTypes;
+    vector<string> fieldNames;
+    int accept(Visitor* visitor);
+    StructDec(string);
+    ~StructDec();
+};
+
 class Program{
 public:
     list<GlobalVarDec*> vdlist;
     list<FunDec*> fdlist;
+    list<StructDec*> sdlist;
     Program();
     ~Program();
     int accept(Visitor* visitor);

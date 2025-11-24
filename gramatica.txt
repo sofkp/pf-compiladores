@@ -1,8 +1,11 @@
 Program ::= GlobalVarDecList  FunDecList
 GlobalVarDecList ::= GlobalVar (GlobalVar)* | ε
 FunDecList ::= (FunDec)+ 
+StructList ::= (StructDec)*
 GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp ';'
 Type ::= 'i32' | 'i64' | 'bool'
+StructDec ::= 'struct' id '{' StructFieldList '}'
+StructFieldList ::= id ':' Type (',' id ':' Type)* | ε
 FunDec ::= 'fn' id '(' (ParamDecList)? ')' ('->' Type)?  Body
 ParamDecList ::= ParamDec (',' ParamDec)*
 ParamDec ::= Type id
@@ -23,4 +26,5 @@ Term ::= Factor (('*' | '/') Factor)∗
 Factor ::= id | Num | Bool | '('Exp')' | id '(' (ArgList)? ')'
 ArgList ::= CExp (',' CExp)∗
 Bool ::= 'true' | 'false'
+String ::= '"' [^\"]* '"'
 

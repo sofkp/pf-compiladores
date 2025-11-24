@@ -46,6 +46,8 @@ public:
         I32,
         I64,
         BOOL,
+        STRING,
+        STRUCT,
         STATIC,
         RETURN,
         PRINT, //println!

@@ -16,6 +16,7 @@ public:
     Parser(Scanner* scanner);       
     Program* parseProgram();
     FunDec* parseFunDec();
+    StructDec* parseStructDec();
     Body* parseBody();
     GlobalVarDec* parseGlobalVarDec();
     LocalVarDec* parseLocalVarDec();

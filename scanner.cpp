@@ -75,8 +75,28 @@ Token* Scanner::nextToken() {
         else if (lexema=="bool") return new Token(Token::BOOL, input, first, current - first);
         else if (lexema=="static") return new Token(Token::STATIC, input, first, current - first);
         else if (lexema=="return") return new Token(Token::RETURN, input, first, current - first);
+        else if (lexema=="struct") return new Token(Token::STRUCT, input, first, current - first);
         else return new Token(Token::ID, input, first, current - first);
     }
+        // String literales
+        else if (c == '"') {
+            current++;
+            first = current;
+            while (current < input.length() && input[current] != '"') {
+                if (input[current] == '\\' && current + 1 < input.length()) {
+                    current += 2;
+                } else {
+                    current++;
+                }
+            }
+            if (current >= input.length()) {
+                token = new Token(Token::ERR, input, first-1, current - (first-1));
+            } else {
+                token = new Token(Token::STRING, input, first, current - first);
+                current++;
+            }
+            return token;
+        }
     // Operadores
     else if (c=='+' || c=='-' || c=='*' || c=='/' || c=='(' || c==')' || c=='{' || c=='}' ||
             c==';' || c==',' || c==':' || c=='<' || c=='>' || c=='=' || c=='.') {

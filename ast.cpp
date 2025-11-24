@@ -50,6 +50,18 @@ FcallExp::FcallExp(string n) {
 
 FcallExp::~FcallExp() {}
 
+// ------------------StringExp ------------------
+StringExp::StringExp(const string& v) : value(v) {}
+StringExp::~StringExp() {}
+
+// ------------------StructDec ------------------
+StructDec::StructDec(string n) {
+    nombre = n;
+    fieldTypes = vector<string>();
+    fieldNames = vector<string>();
+}
+StructDec::~StructDec() {}
+
 // ------------------ Stm ------------------
 
 Stm::~Stm(){}
@@ -136,5 +148,6 @@ FunDec::~FunDec(){}
 Program::Program(){
     vdlist=list<GlobalVarDec*>();
     fdlist=list<FunDec*>();
+    sdlist=list<StructDec*>();
 }
 Program::~Program(){}

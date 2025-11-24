@@ -66,6 +66,8 @@ ostream& operator<<(ostream& outs, const Token& tok) {
         case Token::I32:    outs << "TOKEN(I32, \""    << tok.text << "\")"; break;
         case Token::I64:    outs << "TOKEN(I64, \""    << tok.text << "\")"; break;
         case Token::BOOL:    outs << "TOKEN(BOOL, \""    << tok.text << "\")"; break;
+        case Token::STRING:    outs << "TOKEN(STRING, \""    << tok.text << "\")"; break;
+        case Token::STRUCT:    outs << "TOKEN(STRUCT, \""    << tok.text << "\")"; break;
         
         case Token::STATIC:    outs << "TOKEN(STATIC, \""    << tok.text << "\")"; break;
         
