@@ -10,7 +10,6 @@ private:
     string input;
     int first;
     int current;
-
 public:
     Scanner(const char* in_s);
     Token* nextToken();

@@ -43,7 +43,6 @@ StructLit ::= id '{' StructLitFields '}'
 StructLitFields ::= StructLitField (',' StructLitField)* | ε
 StructLitField ::= id ':' CExp
 
-
 Program ::= GlobalVarDecList  FunDecList
 GlobalVarDecList ::= (GlobalVar | StructDec)*
 FunDecList ::= (FunDec)+ 

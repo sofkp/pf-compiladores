@@ -1,6 +1,5 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
-
 #include <unordered_map>
 #include <vector>
 #include <string>

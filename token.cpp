@@ -73,7 +73,7 @@ ostream& operator<<(ostream& outs, const Token& tok) {
         case Token::STRUCT: outs << "TOKEN(STRUCT, \"" << tok.text << "\")"; break;
         case Token::DOT: outs << "TOKEN(DOT, \"" << tok.text << "\")"; break;
         case Token::STRINGTYPE: outs << "TOKEN(STRINGTYPE, \"" << tok.text << "\")"; break;
-    }   
+    }
     return outs;
 }
 

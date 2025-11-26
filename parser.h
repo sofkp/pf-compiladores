@@ -30,4 +30,4 @@ public:
     void debugToken(const std::string& where);
 };
 
-#endif // PARSER_H      
+#endif // PARSER_H

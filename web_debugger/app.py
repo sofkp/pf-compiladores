@@ -48,14 +48,12 @@ class X86Simulator:
         self.finished = False
 
     def _alloc_data_for_string(self, s):
-        """Aloca espacio para una cadena y retorna la dirección."""
         addr = self.next_data_addr
         self.string_data[addr] = s
         self.next_data_addr += max(8, len(s) + 1)
         return addr
 
     def _alloc_data_for_quad(self, value):
-        """Aloca una dirección para un .quad y guarda el valor."""
         addr = self.next_data_addr
         self.memory[str(addr)] = int(value)
         self.next_data_addr += 8

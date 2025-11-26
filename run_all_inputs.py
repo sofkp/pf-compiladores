@@ -36,6 +36,5 @@ for i in range(1, 6):
             dest_tokens = os.path.join(output_dir, f"funcion_{i}.s")
             shutil.move(tokens_file, dest_tokens)
 
-
     else:
         print(filename, "no encontrado en", input_dir)

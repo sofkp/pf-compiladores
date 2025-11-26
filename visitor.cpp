@@ -610,7 +610,6 @@ int TypeCheckerVisitor::visit(IfStm* i) {
     if (!numeric(tc) && (!tc || tc->kind != T_BOOL)) {
         throw runtime_error("condición de if no es booleana/numérica");
     }
-
     tenv.add_level();
     i->ifbody->accept(this);
     tenv.remove_level();

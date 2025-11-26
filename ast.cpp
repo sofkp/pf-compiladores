@@ -1,6 +1,5 @@
 #include "ast.h"
 #include <iostream>
-
 using namespace std;
 
 TypeInfo::TypeInfo(TypeKind k) : kind(k), structName(""), elem(nullptr), size(-1) {}

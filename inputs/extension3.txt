@@ -2,6 +2,7 @@ struct Registro {
     notas:[i64;3]
 }
 
+
 fn main() {
     let r = Registro { notas:[15,18,20] };
     println!("{}", r.notas[0]);

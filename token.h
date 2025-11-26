@@ -8,7 +8,6 @@ using namespace std;
 
 class Token {
 public:
-    // Tipos de token
     enum Type {
         PLUS,
         MINUS,

@@ -30,7 +30,6 @@ int main(int argc, const char* argv[]) {
 
     cout << "[DEBUG] inputPath='" << inputPath << "'\n";
 
-    // Crear outputs si no existe 
     if (MKDIR("outputs") != 0) {
         if (errno != EEXIST) {
             cerr << "No se pudo crear el directorio outputs" << endl;
@@ -39,7 +38,6 @@ int main(int argc, const char* argv[]) {
     }
     cout << "[DEBUG] outputs dir ensured\n";
 
-    // Leer archivo 
     ifstream infile(inputPath);
     if (!infile.is_open()) {
         cerr << "No se pudo abrir: " << inputPath << endl;

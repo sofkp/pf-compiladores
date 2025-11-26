@@ -149,8 +149,7 @@ public:
                 if (isConst[i].at(id)) {
                     out = mem[i].at(id);
                     return true;
-                }
-                return false;
+                }return false;
             }
         }
         return false;

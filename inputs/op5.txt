@@ -12,6 +12,7 @@ fn procesar(s:Sensor) -> i64 {
     return suma;
 }
 
+
 fn main() {
     let text : &str = "Sensor";
     println!(text);

@@ -5,7 +5,6 @@
 #include "parser.h"
 
 using namespace std;
-
 int order = 0;
 
 Parser::Parser(Scanner* sc) : scanner(sc) {

@@ -6,12 +6,9 @@
 
 using namespace std;
 
-
-// Constructor
 Scanner::Scanner(const char* s): input(s), first(0), current(0) { 
 }
 
-// auxiliar
 bool is_white_space(char c) {
     return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
@@ -143,32 +140,20 @@ Token* Scanner::nextToken() {
     return token;
 }
 
-
-
-
-
 // Destructor
-
 Scanner::~Scanner() { }
-
-
-// Función de prueba
-
 
 int ejecutar_scanner(Scanner* scanner, const string& InputFile) {
     Token* tok;
 
-    // Crear carpeta de salida
     string outDir = "outputs/";
 
-    // Extraer el número del input (input3 → 3)
     string base = InputFile;
     size_t slash = base.find_last_of("/\\");
     if (slash != string::npos) base = base.substr(slash + 1);
     size_t dot = base.find_last_of(".");
     if (dot != string::npos) base = base.substr(0, dot);
 
-    // Nombre de salida esperado: outputs/<base>_tokens.txt
     string OutputFileName = outDir + base + "_tokens.txt";
 
     ofstream outFile(OutputFileName);
