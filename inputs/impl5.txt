@@ -1,0 +1,6 @@
+fn main() {
+    let a = 3 * 4 + 2;
+    let b = (10 - 6) / 2;
+    let c = a + b * 3;
+    println!(c);
+}

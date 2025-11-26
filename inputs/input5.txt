@@ -1,7 +1,0 @@
-fn hola() {
-    println!(123);
-}
-
-fn main() {
-    hola();
-}

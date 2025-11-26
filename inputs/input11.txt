@@ -1,5 +1,0 @@
-fn main() {
-    for i in 3..=6 {
-        println!(i);
-    }
-}

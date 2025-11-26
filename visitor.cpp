@@ -1,847 +1,972 @@
-#include <iostream>
-#include "ast.h"
 #include "visitor.h"
-#include <unordered_map>
+#include "ast.h"
+#include <iostream>
+#include <stdexcept>
+
 using namespace std;
 
-///////////////////////////////////////////////////////////////////////////////////
-int Program::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int FunDec::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
-int GlobalVarDec::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
-int LocalVarDec::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
-int Body::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
+// Cuenta locales (LocalVarDec + variables de for) de un Body recursivamente
+static int countLocalsInBody(Body* b) {
+    if (!b) return 0;
+    int c = 0;
 
-int BinaryExp::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int NumberExp::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int IdExp::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int FcallExp::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
+    for (auto d : b->declarations) c++;
 
-int AssignStm::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int FcallStm::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int PrintStm::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int ReturnStm::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
-int ForStm::accept(Visitor* visitor){
-    return visitor->visit(this);
-}
-int WhileStm::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-int IfStm::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-
-///////////////////////////////////////////////////////////////////////////////////
-//-------PRINT VISITOR------
-void PrintVisitor::imprimir(Program* programa){
-    cout << "Codigo:" << endl; 
-    programa->accept(this);
-    cout << endl;
-}
-
-int PrintVisitor::visit(Program* p) {
-    for (auto g : p->vdlist) {
-        g->accept(this);
-        cout << endl;
-    }
-    if (!p->vdlist.empty() && !p->fdlist.empty()) cout << endl;
-    for (auto f : p->fdlist) {
-        f->accept(this);
-        cout << endl;
-    }
-    return 0;
-}
-
-int PrintVisitor::visit(FunDec* f) {
-    tab();
-    cout << "fn " << f->nombre << "(";
-    for (int i=0; i<f->Pnombres.size(); i++){
-        if(i>0) cout << ", ";
-        cout << f->Pnombres[i] << ": " << f->Ptipos[i];
-    }
-    cout << ")";
-    if(f->returns)
-        cout << " -> " << f->tipo;
-    cout << " {" << endl;
-
-    indent++;
-    if (f->body) f->body->accept(this);
-    indent--;
-
-    tab();
-    cout << "}";
-    return 0;
-}
-
-int PrintVisitor::visit(GlobalVarDec* vd) {
-    tab();
-    cout << "static ";
-    if(vd->mut) cout << "mut ";
-    cout << vd->name << ": " << vd->type << " = ";
-    vd->value->accept(this);
-    cout << ";";
-    return 0;
-}
-
-int PrintVisitor::visit(LocalVarDec* vd) {
-    tab();
-    cout << "let ";
-    if(vd->mut) cout << "mut ";
-    cout << vd->name << ": " << vd->type;
-    if(vd->value) {
-        cout << " = ";
-        vd->value->accept(this);
-    }
-    cout << ";";
-    return 0;
-}
-
-int PrintVisitor::visit(Body* body) {
-    for(auto d : body->declarations){
-        d->accept(this);
-        cout << endl;
-    }
-    for(auto s : body->StmList){
-        s->accept(this);
-        cout << endl;
-    }
-    return 0;
-}
-
-int PrintVisitor::visit(BinaryExp* exp) {
-    exp->left->accept(this);
-    cout << ' ' << Exp::binopToChar(exp->op) << ' ';
-    exp->right->accept(this);
-    return 0;
-}
-
-int PrintVisitor::visit(NumberExp* exp) {
-    cout << exp->value;
-    return 0;
-}
-
-
-int PrintVisitor::visit(IdExp* exp) {
-    cout << exp->value;
-    return 0;
-}
-
-
-int PrintVisitor::visit(FcallExp* exp) {
-    cout << exp->nombre << "(";
-    for(int i=0; i<exp->argumentos.size(); i++){
-        if(i>0) cout << ", ";
-        exp->argumentos[i]->accept(this);
-    }
-    cout << ")";
-    return 0;
-}
-
-int PrintVisitor::visit(AssignStm* stm) {
-    tab();
-    cout << stm->var << "=";
-    stm->value->accept(this);
-    cout << ";" << endl;
-    return 0;
-}
-
-int PrintVisitor::visit(FcallStm* stm) {
-    tab();
-    stm->e->accept(this);
-    cout << ";";
-    return 0;
-}
-
-int PrintVisitor::visit(PrintStm* stm) {
-    tab();
-    cout << "println!(";
-    stm->e->accept(this);
-    cout << ");" << endl;
-    return 0;
-}
-
-int PrintVisitor::visit(ReturnStm* stm) {
-    tab();
-    cout << "return ";
-    if (stm->value) stm->value->accept(this);
-    cout << ";";
-    return 0;
-}
-
-
-int PrintVisitor::visit(ForStm* stm) {
-    tab();
-    cout << "for " << stm->var << " in ";
-    stm->start->accept(this);
-    if(stm->equal) cout << "..=";
-    else cout << "..";
-    stm->finish->accept(this);
-    cout << " {" <<endl;
-
-    indent++;
-    stm->body->accept(this);
-    indent--;
-
-    tab();
-    cout << "}" <<endl;
-    return 0;
-}
-
-
-int PrintVisitor::visit(WhileStm* stm) {
-    tab();
-    cout << "while " ;
-    stm->condition->accept(this);
-    cout  << " {" << endl;
-    indent++;
-    stm->body->accept(this);
-    indent--;
-    tab();
-    cout << "}" << endl;
-    return 0;
-}
-
-int PrintVisitor::visit(IfStm* stm) {
-    tab();
-    cout << "if " ;
-    stm->condition->accept(this);
-    cout <<" {" << endl;
-    indent++;
-    stm->ifbody->accept(this);
-    indent--;
-    tab();
-    if(stm->elsecond) {
-        tab();
-        cout << "} else {" << endl;
-
-        indent++;
-        stm->elsebody->accept(this);
-        indent--;
-
-        tab();
-        cout << "}";
-    } else {
-        tab();
-        cout << "}";
-    }
-
-    return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////////
-//-------EVAL VISITOR------
-void EVALVisitor::interprete(Program* programa){
-    root = programa;
-    returned = false;
-    return_value = 0;
-    env.add_level();
-    cout << "Interprete:" << endl;
-    programa->accept(this);
-    env.remove_level();
-    return;
-}
-int EVALVisitor::visit(Program* p) {
-    for(auto g : p->vdlist)
-        g->accept(this);
-
-    for(auto f : p->fdlist){
-        if(f->nombre == "main"){
-            f->accept(this);
-            break;
-        }
-    }
-    return 0;
-}
-
-int EVALVisitor::visit(FunDec* fd) {
-    env.add_level();
-    returned = false;      // <-- reiniciamos
-    return_value = 0;
-    fd->body->accept(this);
-    env.remove_level();
-    return return_value;
-}
-
-
-int EVALVisitor::visit(GlobalVarDec* v) {
-    int val = v->value->accept(this);
-    env.add_var(v->name, val);
-    return 0;
-}
-
-int EVALVisitor::visit(LocalVarDec* v) {
-    int val = v->value ? v->value->accept(this) : 0;
-    env.add_var(v->name, val);
-    return 0;
-}
-
-int EVALVisitor::visit(Body* body) {
-    env.add_level();
-    for (auto d : body->declarations) {
-        if (returned) break;
-        d->accept(this);
-    }
-    for (auto s : body->StmList) {
-        if (returned) break;
-        s->accept(this);
-    }
-    env.remove_level();
-    return 0;
-}
-
-
-int EVALVisitor::visit(BinaryExp* exp) {
-    int result;
-    int v1 = exp->left->accept(this);
-    int v2 = exp->right->accept(this);
-    switch (exp->op) {
-        case PLUS_OP:
-            result = v1 + v2;
-            break;
-        case MINUS_OP:
-            result = v1 - v2;
-            break;
-        case MUL_OP:
-            result = v1 * v2;
-            break;
-        case DIV_OP:
-            if (v2 != 0)
-                result = v1 / v2;
-            else {
-                cout << "Error: división por cero" << endl;
-                result = 0;
+    for (auto s : b->StmList) {
+        if (auto f = dynamic_cast<ForStm*>(s)) {
+            c++; // variable del for
+            c += countLocalsInBody(f->body);
+        } else if (auto w = dynamic_cast<WhileStm*>(s)) {
+            c += countLocalsInBody(w->body);
+        } else if (auto i = dynamic_cast<IfStm*>(s)) {
+            c += countLocalsInBody(i->ifbody);
+            if (i->elsecond && i->elsebody) {
+                c += countLocalsInBody(i->elsebody);
             }
-            break;
-        case LT_OP:
-            result = v1 < v2;
-            break;
-        case LE_OP:
-            result = v1 <= v2;
-            break;
-        case GT_OP:
-            result = v1 > v2;
-            break;
-        case GE_OP:
-            result = v1 >= v2;
-            break;
-        case EQ_OP:
-            result = v1 == v2;
-            break;
-        default:
-            cout << "Operador desconocido" << endl;
-            result = 0;
+        }
     }
-    return result;
+    return c;
 }
 
-int EVALVisitor::visit(NumberExp* exp) {
-    return exp->value;
+int Program::accept(Visitor* v)      { return v->visit(this); }
+int FunDec::accept(Visitor* v)       { return v->visit(this); }
+int StructDec::accept(Visitor* v)    { return v->visit(this); }
+int GlobalVarDec::accept(Visitor* v) { return v->visit(this); }
+int LocalVarDec::accept(Visitor* v)  { return v->visit(this); }
+int Body::accept(Visitor* v)         { return v->visit(this); }
+
+int BinaryExp::accept(Visitor* v)        { return v->visit(this); }
+int NumberExp::accept(Visitor* v)        { return v->visit(this); }
+int IdExp::accept(Visitor* v)            { return v->visit(this); }
+int FcallExp::accept(Visitor* v)         { return v->visit(this); }
+int StructInitExp::accept(Visitor* v)    { return v->visit(this); }
+int ArrayExp::accept(Visitor* v)         { return v->visit(this); }
+int ArrayAccessExp::accept(Visitor* v)   { return v->visit(this); }
+int StringExp::accept(Visitor* v)        { return v->visit(this); }
+int FieldAccessExp::accept(Visitor* v)   { return v->visit(this); }
+
+int AssignStm::accept(Visitor* v)    { return v->visit(this); }
+int FcallStm::accept(Visitor* v)     { return v->visit(this); }
+int PrintStm::accept(Visitor* v)     { return v->visit(this); }
+int ReturnStm::accept(Visitor* v)    { return v->visit(this); }
+int StructStm::accept(Visitor* v)    { return v->visit(this); }
+int ArrayStm::accept(Visitor* v)     { return v->visit(this); }
+int ForStm::accept(Visitor* v)       { return v->visit(this); }
+int WhileStm::accept(Visitor* v)     { return v->visit(this); }
+int IfStm::accept(Visitor* v)        { return v->visit(this); }
+
+
+TypeInfo* TypeCheckerVisitor::makeSimple(TypeKind k) {
+    return new TypeInfo(k);
 }
 
-int EVALVisitor::visit(IdExp* exp) {
-    return env.lookup(exp->value);
+bool TypeCheckerVisitor::same(TypeInfo* a, TypeInfo* b) {
+    if (a == b) return true;
+    if (!a || !b) return false;
+    if (a->kind != b->kind) return false;
+
+    switch (a->kind) {
+        case T_I32:
+        case T_I64:
+        case T_BOOL:
+        case T_STRING:
+            return true;
+        case T_STRUCT:
+            return a->structName == b->structName;
+        case T_ARRAY:
+            return same(a->elem, b->elem) && a->size == b->size;
+        default:
+            return true;
+    }
 }
 
-int EVALVisitor::visit(FcallExp* exp) {
-    FunDec* fun = nullptr;
+bool TypeCheckerVisitor::numeric(TypeInfo* a) {
+    return a && (a->kind == T_I32 || a->kind == T_I64);
+}
 
-    for (auto f : root->fdlist) {
-        if (f->nombre == exp->nombre) {
-            fun = f;
-            break;
+TypeInfo* TypeCheckerVisitor::unifyNum(TypeInfo* a, TypeInfo* b) {
+    if (!numeric(a) || !numeric(b)) {
+        throw runtime_error("operación aritmética con tipo no numérico");
+    }
+    // simplificación: siempre elevamos a I64
+    return makeSimple(T_I64);
+}
+
+TypeInfo* TypeCheckerVisitor::get(Exp* e) {
+    auto it = inferred.find(e);
+    if (it == inferred.end()) {
+        throw runtime_error("expresión sin tipo inferido");
+    }
+    return it->second;
+}
+
+
+int TypeCheckerVisitor::typeCheck(Program* p) {
+    tenv.clear();
+    tenv.add_level();
+    structs.clear();
+    funcs.clear();
+    inferred.clear();
+    currentFun = "";
+    expectedReturn = nullptr;
+    localCount = 0;
+    funLocalCount.clear();
+
+    // Primero: registrar structs
+    for (auto sd : p->stlist) {
+        sd->accept(this);
+    }
+
+    // Segundo: registrar firmas de funciones
+    for (auto fd : p->fdlist) {
+        FunInfo fi;
+        fi.ret = fd->returnType;
+        fi.params = fd->Ptipos;
+        funcs[fd->nombre] = fi;
+    }
+
+    // Globales
+    for (auto gv : p->vdlist) {
+        gv->accept(this);
+    }
+
+    // Cuerpos de funciones
+    for (auto fd : p->fdlist) {
+        fd->accept(this);
+    }
+
+    return 0;
+}
+
+
+int TypeCheckerVisitor::visit(Program* /*p*/) {
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(StructDec* sd) {
+    StructInfo info;
+    info.fields = sd->fields;
+    info.types  = sd->tipos;
+    info.sizeBytes = (int)sd->fields.size() * 8; // layout homogéneo de 8 bytes
+
+    for (int i = 0; i < (int)sd->fields.size(); i++) {
+        info.index[sd->fields[i]] = i;
+    }
+    structs[sd->nombre] = info;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(GlobalVarDec* vd) {
+    // 1) Si hay valor, tiparlo SIEMPRE
+    if (vd->value) {
+        vd->value->accept(this);
+        TypeInfo* vt = get(vd->value);
+
+        if (!vd->type || vd->type->kind == T_UNKNOWN) {
+            vd->type = new TypeInfo(*vt);
+        }
+        else {
+            // Si hay tipo declarado, verificar compatibilidad (incluyendo arrays)
+            if (!same(vd->type, vt)) {
+                throw runtime_error("tipo del inicializador global '" + vd->name + "' incompatible");
+            }
+        }
+    } else {
+        // Sin valor: necesitamos al menos un tipo
+        if (!vd->type || vd->type->kind == T_UNKNOWN) {
+            throw runtime_error("variable global sin tipo ni valor: " + vd->name);
         }
     }
 
-    if (!fun) {
-        cout << "función no encontrada: " << exp->nombre << endl;
+    // 2) Registrar en el entorno global
+    tenv.add_var(vd->name, vd->type);
+    return 0;
+}
+
+
+int TypeCheckerVisitor::visit(LocalVarDec* vd) {
+    if (!vd->type || vd->type->kind == T_UNKNOWN) {
+        vd->value->accept(this);
+        TypeInfo* vt = get(vd->value);
+        vd->type = new TypeInfo(*vt);
+    }
+    tenv.add_var(vd->name, vd->type);
+    localCount++;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(FunDec* f) {
+    currentFun = f->nombre;
+    tenv.add_level();
+    localCount = 0;
+
+    // parámetros
+    int paramCount = (int)f->Pnombres.size();
+    for (int i = 0; i < paramCount; i++) {
+        tenv.add_var(f->Pnombres[i], f->Ptipos[i]);
+    }
+
+    expectedReturn = f->returnType;
+    if (expectedReturn && expectedReturn->kind == T_UNKNOWN) {
+        expectedReturn = nullptr;
+    }
+
+    f->body->accept(this);
+
+    if (!f->returnType) {
+        f->returnType = expectedReturn;
+    }
+
+    funLocalCount[f->nombre] = paramCount + localCount;
+
+    tenv.remove_level();
+    currentFun = "";
+    expectedReturn = nullptr;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(Body* b) {
+    tenv.add_level();
+    for (auto d : b->declarations) d->accept(this);
+    for (auto s : b->StmList) s->accept(this);
+    tenv.remove_level();
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(NumberExp* e) {
+    TypeInfo* t = makeSimple(T_I64);
+    inferred[e] = t;
+    e->inferredType = t;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(StringExp* e) {
+    TypeInfo* t = makeSimple(T_STRING);
+    inferred[e] = t;
+    e->inferredType = t;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(IdExp* e) {
+    TypeInfo* t = nullptr;
+    if (!tenv.lookup(e->value, t)) {
+        throw runtime_error("identificador no declarado: " + e->value);
+    }
+    inferred[e] = t;
+    e->inferredType = t;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(BinaryExp* e) {
+    e->left->accept(this);
+    e->right->accept(this);
+    TypeInfo* tl = get(e->left);
+    TypeInfo* tr = get(e->right);
+
+    switch (e->op) {
+        case PLUS_OP:
+        case MINUS_OP:
+        case MUL_OP:
+        case DIV_OP: {
+            TypeInfo* t = unifyNum(tl, tr);
+            inferred[e] = t;
+            e->inferredType = t;
+            break;
+        }
+        default: {
+            // comparaciones
+            (void)unifyNum(tl, tr);
+            TypeInfo* t = makeSimple(T_BOOL);
+            inferred[e] = t;
+            e->inferredType = t;
+            break;
+        }
+    }
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(FcallExp* f) {
+    auto it = funcs.find(f->nombre);
+    if (it == funcs.end()) {
+        throw runtime_error("función no declarada: " + f->nombre);
+    }
+    FunInfo& info = it->second;
+
+    if (f->argumentos.size() != info.params.size()) {
+        throw runtime_error("número de argumentos incorrecto en llamada a " + f->nombre);
+    }
+
+    for (size_t i = 0; i < f->argumentos.size(); i++) {
+        f->argumentos[i]->accept(this);
+        TypeInfo* at = get(f->argumentos[i]);
+        if (!same(at, info.params[i])) {
+            throw runtime_error("tipo de argumento " + to_string(i) + " incorrecto en " + f->nombre);
+        }
+    }
+
+    TypeInfo* ret = info.ret ? info.ret : makeSimple(T_I64);
+    inferred[f] = ret;
+    f->inferredType = ret;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(StructInitExp* s) {
+    auto it = structs.find(s->nombre);
+    if (it == structs.end()) {
+        throw runtime_error("struct no declarado: " + s->nombre);
+    }
+    StructInfo& info = it->second;
+
+    if (s->fields.size() != info.fields.size()) {
+        throw runtime_error("cantidad de campos incorrecta al inicializar struct " + s->nombre);
+    }
+
+    for (size_t i = 0; i < s->fields.size(); i++) {
+        const string& fname = s->fields[i];
+        auto fi = info.index.find(fname);
+        if (fi == info.index.end()) {
+            throw runtime_error("campo " + fname + " no existe en struct " + s->nombre);
+        }
+        int idx = fi->second;
+        TypeInfo* expected = info.types[idx];
+
+        s->values[i]->accept(this);
+        TypeInfo* tv = get(s->values[i]);
+
+        if (!same(tv, expected)) {
+            throw runtime_error("tipo incorrecto en campo " + fname + " de struct " + s->nombre);
+        }
+    }
+
+    TypeInfo* t = new TypeInfo(s->nombre); // T_STRUCT con nombre
+    inferred[s] = t;
+    s->inferredType = t;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(ArrayExp* a) {
+    if (a->elems.empty()) {
+        TypeInfo* elem = makeSimple(T_UNKNOWN);
+        TypeInfo* t = new TypeInfo(T_ARRAY, elem, 0);
+        inferred[a] = t;
+        a->inferredType = t;
         return 0;
     }
 
-    env.add_level();
+    a->elems[0]->accept(this);
+    TypeInfo* base = get(a->elems[0]);
 
-    bool old_returned = returned;
-    int  old_retval   = return_value;
-    returned = false;
-    return_value = 0;
-
-    for (int i = 0; i < exp->argumentos.size(); i++) {
-        int val = exp->argumentos[i]->accept(this);
-        env.add_var(fun->Pnombres[i], val);
+    for (size_t i = 1; i < a->elems.size(); i++) {
+        a->elems[i]->accept(this);
+        TypeInfo* ti = get(a->elems[i]);
+        if (!same(ti, base)) {
+            throw runtime_error("elementos de array con tipos incompatibles");
+        }
     }
 
-    fun->body->accept(this);
-    int ret = return_value;
-
-    returned = old_returned;
-    return_value = old_retval;
-
-    env.remove_level();
-    return ret;
-}
-
-
-int EVALVisitor::visit(AssignStm* stm) {
-    int val = stm->value->accept(this);
-    env.update(stm->var, val);
-    return 0;
-}
-int EVALVisitor::visit(FcallStm* stm) {
-    return stm->e->accept(this);;
-}
-
-int EVALVisitor::visit(PrintStm* stm) {
-    cout << stm->e->accept(this) << endl;
+    TypeInfo* t = new TypeInfo(T_ARRAY, base, (int)a->elems.size());
+    inferred[a] = t;
+    a->inferredType = t;
     return 0;
 }
 
-int EVALVisitor::visit(ReturnStm* stm) {
-    returned = true;
+int TypeCheckerVisitor::visit(ArrayAccessExp* a) {
+    a->arr->accept(this);
+    a->index->accept(this);
 
-    if (stm->value)
-        return_value = stm->value->accept(this);
-    else
-        return_value = 0;
+    TypeInfo* ta = get(a->arr);
+    TypeInfo* ti = get(a->index);
 
-    return return_value;
-}
-
-
-int EVALVisitor::visit(ForStm*stm) {
-    int s = stm->start->accept(this);
-    int f = stm->finish->accept(this);
-
-    env.add_level();
-    env.add_var(stm->var, s);
-
-    for(int x=s; stm->equal ? x <= f : x < f; x++){
-        env.update(stm->var, x);
-        stm->body->accept(this);
+    if (!ta || ta->kind != T_ARRAY) {
+        throw runtime_error("indexación [] sobre valor no array");
+    }
+    if (!numeric(ti)) {
+        throw runtime_error("índice de array no numérico");
     }
 
-    env.remove_level();
-    return 0;
-}
-
-int EVALVisitor::visit(WhileStm* stm) {
-    while(stm->condition->accept(this)){
-        stm->body->accept(this);
-    }
-    return 0;
-}
-
-int EVALVisitor::visit(IfStm* stm) {
-    if(stm->condition->accept(this))
-        stm->ifbody->accept(this);
-    else if(stm->elsecond)
-        stm->elsebody->accept(this);
-
-    return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////////
-//-------TYPECHECKER VISITOR------
-int TypeCheckerVisitor::tipe(Program *program) {
-    fun_locales.clear();
-
-    for (auto f : program->fdlist)
-        f->accept(this);
-
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(Program *p) {
+    // Tipo del resultado: tipo de elemento del array
+    TypeInfo* t = ta->elem;
+    inferred[a] = t;
+    a->inferredType = t;
     return 0;
 }
 
 
-int TypeCheckerVisitor::visit(GlobalVarDec *vd) {
-    return 0;
-}
+int TypeCheckerVisitor::visit(FieldAccessExp* f) {
+    f->obj->accept(this);
+    TypeInfo* tobj = get(f->obj);
 
-int TypeCheckerVisitor::visit(LocalVarDec *vd) {
-    locales += 1;
-    return 0;
-}
-
-
-int TypeCheckerVisitor::visit(FunDec *fd) {
-    int parametros = fd->Pnombres.size();
-    locales = 0;
-    fd->body->accept(this);
-    fun_locales[fd->nombre] = parametros + locales;
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(Body *body) {
-    for (auto i:body->declarations) {
-        i->accept(this);
+    if (!tobj || tobj->kind != T_STRUCT) {
+        throw runtime_error("acceso a campo sobre valor no struct");
     }
 
-    for(auto i:body->StmList) {
-        i->accept(this);
+    auto sit = structs.find(tobj->structName);
+    if (sit == structs.end()) {
+        throw runtime_error("struct no registrado: " + tobj->structName);
+    }
+
+    StructInfo& info = sit->second;
+    auto fi = info.index.find(f->field);
+    if (fi == info.index.end()) {
+        throw runtime_error("campo " + f->field + " no existe en struct " + tobj->structName);
+    }
+
+    int idx = fi->second;
+    TypeInfo* t = info.types[idx];
+    inferred[f] = t;
+    f->inferredType = t;
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(AssignStm* s) {
+    s->left->accept(this);
+    s->value->accept(this);
+    TypeInfo* tl = get(s->left);
+    TypeInfo* tv = get(s->value);
+    if (!same(tl, tv)) {
+        throw runtime_error("tipos incompatibles en asignación");
     }
     return 0;
 }
 
-int TypeCheckerVisitor::visit(BinaryExp *exp) {
-    exp->left->accept(this);
-    exp->right->accept(this);
+int TypeCheckerVisitor::visit(FcallStm* s) {
+    s->e->accept(this);
     return 0;
 }
 
-int TypeCheckerVisitor::visit(NumberExp *exp) {
+int TypeCheckerVisitor::visit(PrintStm* s) {
+    s->e->accept(this);
+    // asumimos print solo de enteros / algo numérico
     return 0;
 }
 
-int TypeCheckerVisitor::visit(IdExp *exp) {
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(FcallExp *fcall) {
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(AssignStm *stm) {
-    stm->value->accept(this);
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(FcallStm *fcall) {
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(PrintStm *stm) {
-    return 0;
-}
-
-int TypeCheckerVisitor::visit(ReturnStm *r) {
+int TypeCheckerVisitor::visit(ReturnStm* r) {
     r->value->accept(this);
+    TypeInfo* rt = get(r->value);
+
+    if (!expectedReturn) {
+        expectedReturn = rt;
+    } else if (!same(expectedReturn, rt)) {
+        throw runtime_error("tipo de return inconsistente en función " + currentFun);
+    }
     return 0;
 }
 
-int TypeCheckerVisitor::visit(ForStm *stm) {
-    locales += 1;
-    stm->body->accept(this);
+int TypeCheckerVisitor::visit(StructStm* s) {
+    // usar expresión temporal FieldAccessExp para reusar la lógica
+    FieldAccessExp tmp(s->object, s->field);
+    tmp.accept(this);
+    s->value->accept(this);
 
+    TypeInfo* tl = get(&tmp);
+    TypeInfo* tv = get(s->value);
+    if (!same(tl, tv)) {
+        throw runtime_error("asignación a campo struct con tipo incompatible");
+    }
     return 0;
 }
 
-int TypeCheckerVisitor::visit(WhileStm *stm) {
-    stm->body->accept(this);
+int TypeCheckerVisitor::visit(ArrayStm* s) {
+    ArrayAccessExp tmp(s->array, s->index);
+    tmp.accept(this);
+    s->value->accept(this);
+
+    TypeInfo* tl = get(&tmp);
+    TypeInfo* tv = get(s->value);
+    if (!same(tl, tv)) {
+        throw runtime_error("asignación a elemento de array con tipo incompatible");
+    }
     return 0;
 }
 
-int TypeCheckerVisitor::visit(IfStm *stm) {
-    int before = locales;
+int TypeCheckerVisitor::visit(ForStm* f) {
+    tenv.add_level();
+    // variable del for es i64
+    TypeInfo* t = makeSimple(T_I64);
+    tenv.add_var(f->var, t);
+    localCount++;
 
-    int after_if = locales;
-    stm->ifbody->accept(this);
-    after_if = locales;
+    f->start->accept(this);
+    f->finish->accept(this);
+    TypeInfo* ts = get(f->start);
+    TypeInfo* tf = get(f->finish);
+    (void)unifyNum(ts, tf);
 
-    int after_else = before;
-    if (stm->elsecond) {
-        stm->elsebody->accept(this);
-        after_else = locales;
+    f->body->accept(this);
+
+    tenv.remove_level();
+    return 0;
+}
+
+int TypeCheckerVisitor::visit(WhileStm* w) {
+    w->condition->accept(this);
+    TypeInfo* tc = get(w->condition);
+    if (!numeric(tc) && (!tc || tc->kind != T_BOOL)) {
+        throw runtime_error("condición de while no es booleana/numérica");
     }
 
-    locales = max(after_if, after_else);
-
+    w->body->accept(this);
     return 0;
 }
 
+int TypeCheckerVisitor::visit(IfStm* i) {
+    i->condition->accept(this);
+    TypeInfo* tc = get(i->condition);
+    if (!numeric(tc) && (!tc || tc->kind != T_BOOL)) {
+        throw runtime_error("condición de if no es booleana/numérica");
+    }
 
-///////////////////////////////////////////////////////////////////////////////////
-//-------GENCODE VISITOR------
-GenCodeVisitor::~GenCodeVisitor() {
-    delete memoria;
-}
+    tenv.add_level();
+    i->ifbody->accept(this);
+    tenv.remove_level();
 
-int GenCodeVisitor::generar(Program* program) {
-    tipe.tipe(program);
-    fun_reserva = tipe.fun_locales;
-    program->accept(this);
+    if (i->elsecond && i->elsebody) {
+        tenv.add_level();
+        i->elsebody->accept(this);
+        tenv.remove_level();
+    }
     return 0;
 }
 
-int GenCodeVisitor::visit(Program* program) {
-    out << ".data\nprint_fmt: .string \"%ld \\n\""<<endl;
-    memoria->add_level();
+GenCodeVisitor::GenCodeVisitor(ostream& o)
+    : out(o),
+      strCount(0),
+      currentFun(""),
+      offset(0),
+      labelCount(0) {}
 
-    for (auto dec : program->vdlist){
-        dec->accept(this);
+void GenCodeVisitor::buildStructLayouts(Program* p) {
+    layouts.clear();
+    for (auto sd : p->stlist) {
+        StructLayout lay;
+        lay.sizeBytes = (int)sd->fields.size() * 8;
+        for (int i = 0; i < (int)sd->fields.size(); i++) {
+            lay.fieldOffset[sd->fields[i]] = i * 8;
+        }
+        layouts[sd->nombre] = lay;
+    }
+}
+
+// Calcula la dirección de un lvalue en %rax
+void GenCodeVisitor::emitLValueAddr(Exp* e) {
+    if (auto id = dynamic_cast<IdExp*>(e)) {
+        int off;
+        if (envStack.lookup(id->value, off)) {
+            // local/param en stack
+            out << " leaq " << off << "(%rbp), %rax\n";
+        } else {
+            // global
+            out << " leaq " << id->value << "(%rip), %rax\n";
+        }
+        return;
     }
 
-    for (auto& [var, val] : memoriaGlobal) {
-        out << var << ": .quad " << val << endl;
+    if (auto aa = dynamic_cast<ArrayAccessExp*>(e)) {
+        aa->arr->accept(this);
+        out << " movq %rax, %rdx\n";
+        aa->index->accept(this);
+        out << " imulq $8, %rax\n";
+        out << " addq %rax, %rdx\n";
+        out << " movq %rdx, %rax\n";
+        return;
     }
 
+    if (auto fa = dynamic_cast<FieldAccessExp*>(e)) {
+
+        // Obtener dirección base del objeto
+        emitLValueAddr(fa->obj);   // <<< RECURSIVO Y CORRECTO
+        out << " movq %rax, %rdx\n";
+
+        // Tipo del objeto (ya no se muere por patch #1)
+        TypeInfo* tobj = tc.get(fa->obj);
+
+        auto it = layouts.find(tobj->structName);
+        int off = it->second.fieldOffset[fa->field];
+
+        out << " leaq " << off << "(%rdx), %rax\n";
+        return;
+    }
+
+    throw runtime_error("lvalue inválido en emitLValueAddr");
+}
+
+void GenCodeVisitor::copyStruct(int size) {
+    // NO usado por ahora; placeholder
+    // podrías implementar un loop si quisieras copiar bloques grandes
+    (void)size;
+}
+
+void GenCodeVisitor::copyArray(int size) {
+    // NO usado por ahora; placeholder
+    (void)size;
+}
+
+int GenCodeVisitor::generate(Program* p) {
+    // 1) Typechecking completo
+    tc.typeCheck(p);
+
+    // 2) Construir layouts de struct para código
+    buildStructLayouts(p);
+
+    // 3) Sección de datos
+    out << ".data\n";
+    out << "print_int_fmt: .string \"%ld\\n\"\n";
+
+    // Globales
+    for (auto g : p->vdlist) {
+        g->accept(this);
+    }
+
+    // 4) Código
     out << ".text\n";
-    
-    for (auto dec : program->fdlist){
-        dec->accept(this);
+
+    for (auto f : p->fdlist) {
+        f->accept(this);
     }
 
-    out << ".section .note.GNU-stack,\"\",@progbits"<<endl;
-    
-    memoria->remove_level();
-
+    out << ".section .note.GNU-stack,\"\",@progbits\n";
     return 0;
-    
+}
+
+int GenCodeVisitor::visit(Program* /*p*/) {
+    return 0;
+}
+
+// Global variables: simple .quad 0 (sin init por ahora)
+int GenCodeVisitor::visit(GlobalVarDec* vd) {
+    out << vd->name << ": .quad 0\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(StructDec* /*sd*/) {
+    // Nada que emitir, ya usamos layouts
+    return 0;
 }
 
 int GenCodeVisitor::visit(FunDec* f) {
-    entornoFuncion = true;
-    memoria->add_level();
+    currentFun = f->nombre;
+    envStack.add_level();
     offset = -8;
-    nombreFuncion = f->nombre;
-    vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    
-    int vars = fun_reserva[f->nombre];
-    int total = (vars + 1) * 8;
 
-    if (total % 16 != 0) {
-        total += 8;
+    out << ".globl " << f->nombre << "\n";
+    out << f->nombre << ":\n";
+    out << " pushq %rbp\n";
+    out << " movq %rsp, %rbp\n";
+
+    int locals = countLocalsInBody(f->body);
+    int params = (int)f->Pnombres.size();
+    int totalSlots = locals + params;
+
+    int frameSize = totalSlots * 8;
+    if (frameSize % 16 != 0) frameSize += 8;
+
+    if (frameSize > 0) {
+        out << " subq $" << frameSize << ", %rsp\n";
     }
-    
-    out << ".globl " << f->nombre << endl;
-    out << f->nombre <<  ":" << endl;
-    out << " pushq %rbp" << endl;
-    out << " movq %rsp, %rbp" << endl;
-    out << " subq $" << total << ", %rsp\n";
-    int size = f->Pnombres.size();
-    for (int i = 0; i < size; i++) { //parametros
-        memoria->add_var(f->Pnombres[i], offset);
+
+    // Pasar parámetros a stack
+    vector<string> argRegs = { "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9" };
+    for (int i = 0; i < params && i < 6; i++) {
+        envStack.add_var(f->Pnombres[i], offset);
         out << " movq " << argRegs[i] << ", " << offset << "(%rbp)\n";
-        offset -=8;
+        offset -= 8;
     }
-    
-    if (f->body) f->body->accept(this);
 
-    out << ".end_"<< f->nombre << ":"<< endl;
-    out << "leave" << endl;
-    out << "ret" << endl;
+    // Cuerpo
+    f->body->accept(this);
 
-    memoria->remove_level();
-    entornoFuncion = false;
-    return 0;
-}
+    out << ".Lend_" << f->nombre << ":\n";
+    out << " leave\n";
+    out << " ret\n";
 
-int GenCodeVisitor::visit(GlobalVarDec* vd) {
-    auto num = dynamic_cast<NumberExp*>(vd->value);
-    int val = num->value;
-    memoriaGlobal[vd->name] = val;
+    envStack.remove_level();
+    currentFun = "";
     return 0;
 }
 
 int GenCodeVisitor::visit(LocalVarDec* vd) {
-    memoria->add_var(vd->name,offset);
-    if(vd->value){
+    envStack.add_var(vd->name, offset);
+
+    if (vd->value) {
         vd->value->accept(this);
         out << " movq %rax, " << offset << "(%rbp)\n";
     }
+
     offset -= 8;
     return 0;
 }
 
 int GenCodeVisitor::visit(Body* b) {
-    memoria->add_level();
-    for (auto dec : b->declarations){
-        dec->accept(this);
-    }
-    for (auto s : b->StmList){
-        s->accept(this);
-    }
-    memoria->remove_level();
+    envStack.add_level();
+    for (auto d : b->declarations) d->accept(this);
+    for (auto s : b->StmList) s->accept(this);
+    envStack.remove_level();
     return 0;
 }
 
-int GenCodeVisitor::visit(BinaryExp* exp) {
-    exp->left->accept(this);
+/* ---- Expresiones ---- */
+
+int GenCodeVisitor::visit(NumberExp* e) {
+    out << " movq $" << e->value << ", %rax\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(StringExp* s) {
+    string lbl;
+    auto it = strLabels.find(s->s);
+    if (it == strLabels.end()) {
+        lbl = ".LC" + to_string(strCount++);
+        strLabels[s->s] = lbl;
+        out << ".section .rodata\n";
+        out << lbl << ": .string \"" << s->s << "\"\n";
+        out << ".text\n";
+    } else {
+        lbl = it->second;
+    }
+    out << " leaq " << lbl << "(%rip), %rax\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(IdExp* e) {
+    int off;
+    if (envStack.lookup(e->value, off)) {
+        out << " movq " << off << "(%rbp), %rax\n";
+    } else {
+        out << " movq " << e->value << "(%rip), %rax\n";
+    }
+    return 0;
+}
+
+int GenCodeVisitor::visit(BinaryExp* b) {
+    b->left->accept(this);
     out << " pushq %rax\n";
-    exp->right->accept(this);
-    out << " movq %rax, %rcx\n popq %rax\n";
+    b->right->accept(this);
+    out << " movq %rax, %rcx\n";
+    out << " popq %rax\n";
 
-    switch (exp->op) {
-        case PLUS_OP:  out << " addq %rcx, %rax\n"; break;
-        case MINUS_OP: out << " subq %rcx, %rax\n"; break;
-        case MUL_OP:   out << " imulq %rcx, %rax\n"; break;
-        case DIV_OP:   out << " cqto\n"
-                           << " idivq %rcx\n";
+    switch (b->op) {
+        case PLUS_OP:
+            out << " addq %rcx, %rax\n";
             break;
-        case LT_OP:
-            out << " cmpq %rcx, %rax\n"
-                      << " movl $0, %eax\n"
-                      << " setl %al\n"
-                      << " movzbq %al, %rax\n";
+        case MINUS_OP:
+            out << " subq %rcx, %rax\n";
             break;
-        case LE_OP:
-            out << " cmpq %rcx, %rax\n"
-                      << " movl $0, %eax\n"
-                      << " setle %al\n"
-                      << " movzbq %al, %rax\n";
+        case MUL_OP:
+            out << " imulq %rcx, %rax\n";
             break;
-        case GT_OP:
-            out << " cmpq %rcx, %rax\n"
-                      << " movl $0, %eax\n"
-                      << " setg %al\n"
-                      << " movzbq %al, %rax\n";
+        case DIV_OP:
+            out << " cqto\n";
+            out << " idivq %rcx\n";
             break;
-        case GE_OP:
-            out << " cmpq %rcx, %rax\n"
-                      << " movl $0, %eax\n"
-                      << " setge %al\n"
-                      << " movzbq %al, %rax\n";
-            break;
-        case EQ_OP:
-            out << " cmpq %rcx, %rax\n"
-                      << " movl $0, %eax\n"
-                      << " sete %al\n"
-                      << " movzbq %al, %rax\n";
+        default:
+            out << " cmpq %rcx, %rax\n";
+            if (b->op == LT_OP)       out << " setl %al\n";
+            else if (b->op == LE_OP)  out << " setle %al\n";
+            else if (b->op == GT_OP)  out << " setg %al\n";
+            else if (b->op == GE_OP)  out << " setge %al\n";
+            else if (b->op == EQ_OP)  out << " sete %al\n";
+            out << " movzbq %al, %rax\n";
             break;
     }
     return 0;
 }
 
-int GenCodeVisitor::visit(NumberExp* exp) {
-    out << " movq $" << exp->value << ", %rax"<<endl;
-    return 0;
-}
+int GenCodeVisitor::visit(FcallExp* f) {
+    vector<string> argRegs = { "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9" };
 
-int GenCodeVisitor::visit(IdExp* exp) {
-    if (memoriaGlobal.count(exp->value))
-        out << " movq " << exp->value << "(%rip), %rax"<<endl;
-    else
-        out << " movq " << memoria->lookup(exp->value) << "(%rbp), %rax"<<endl;
-    return 0;
-}
-
-int GenCodeVisitor::visit(FcallExp* exp) {
-    vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    int size = exp->argumentos.size();
-    for (int i = 0; i < size; i++) {
-        exp->argumentos[i]->accept(this);
-        out << " movq %rax, " << argRegs[i] <<endl;
+    for (size_t i = 0; i < f->argumentos.size() && i < argRegs.size(); i++) {
+        f->argumentos[i]->accept(this);
+        out << " movq %rax, " << argRegs[i] << "\n";
     }
-    out << "call " << exp->nombre << endl;
+
+    out << " call " << f->nombre << "\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(AssignStm* stm) {
-    stm->value->accept(this);
-    if (memoriaGlobal.count(stm->var))
-        out << " movq %rax, " << stm->var << "(%rip)"<<endl;
-    else
-        out << " movq %rax, " << memoria->lookup(stm->var) << "(%rbp)"<<endl;
+int GenCodeVisitor::visit(ArrayExp* a) {
+    int n = (int)a->elems.size();
+    int bytes = n * 8;
+
+    // malloc(n * 8)
+    out << " movq $" << bytes << ", %rdi\n";
+    out << " call malloc@PLT\n";
+    out << " movq %rax, %r10\n";  // base del array
+
+    for (int i = 0; i < n; i++) {
+        a->elems[i]->accept(this);
+        out << " movq %rax, " << (i * 8) << "(%r10)\n";
+    }
+
+    // return pointer in %rax
+    out << " movq %r10, %rax\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(FcallStm* stm) {
-    stm->e->accept(this);
+
+int GenCodeVisitor::visit(ArrayAccessExp* a) {
+    a->arr->accept(this);
+    out << " movq %rax, %rdx\n";
+    a->index->accept(this);
+    out << " imulq $8, %rax\n";
+    out << " addq %rax, %rdx\n";
+    out << " movq (%rdx), %rax\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(PrintStm* stm) {
-    stm->e->accept(this);
-    out <<
-        " movq %rax, %rsi\n"
-        " leaq print_fmt(%rip), %rdi\n"
-        " movl $0, %eax\n"
-        " call printf@PLT\n";
+int GenCodeVisitor::visit(StructInitExp* s) {
+    auto it = layouts.find(s->nombre);
+    StructLayout& lay = it->second;
 
+    out << " movq $" << lay.sizeBytes << ", %rdi\n";
+    out << " call malloc@PLT\n";
+    out << " movq %rax, %r10\n";
+
+    for (size_t i = 0; i < s->fields.size(); i++) {
+        int off = lay.fieldOffset[s->fields[i]];
+        s->values[i]->accept(this);
+        out << " movq %rax, " << off << "(%r10)\n";
+    }
+
+    out << " movq %r10, %rax\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(ReturnStm* stm) {
-    stm->value->accept(this);
-    out << " jmp .end_"<<nombreFuncion << endl;
+
+
+int GenCodeVisitor::visit(FieldAccessExp* f) {
+    f->obj->accept(this);
+    out << " movq %rax, %rdx\n";
+    TypeInfo* tobj = tc.get(f->obj);
+    auto it = layouts.find(tobj->structName);
+    if (it == layouts.end()) {
+        throw runtime_error("layout no encontrado para struct en FieldAccessExp");
+    }
+    int off = it->second.fieldOffset[f->field];
+    out << " movq " << off << "(%rdx), %rax\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(ForStm* stm) {
-    int label = labelcont++;
-    memoria->add_level();
-    memoria->add_var(stm->var,offset);
+/* ---- Statements ---- */
+
+int GenCodeVisitor::visit(AssignStm* s) {
+    s->value->accept(this);
+    out << " pushq %rax\n";
+    emitLValueAddr(s->left);
+    out << " movq %rax, %rdx\n";
+    out << " popq %rax\n";
+    out << " movq %rax, (%rdx)\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(FcallStm* s) {
+    s->e->accept(this);
+    return 0;
+}
+
+int GenCodeVisitor::visit(PrintStm* s) {
+    s->e->accept(this);
+    out << " movq %rax, %rsi\n";
+    out << " leaq print_int_fmt(%rip), %rdi\n";
+    out << " movl $0, %eax\n";
+    out << " call printf@PLT\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(ReturnStm* r) {
+    r->value->accept(this);
+    out << " jmp .Lend_" << currentFun << "\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(ForStm* f) {
+    int lbl = labelCount++;
+
     int slot = offset;
+    envStack.add_var(f->var, offset);
     offset -= 8;
 
-    stm->start->accept(this);
+    // init
+    f->start->accept(this);
     out << " movq %rax, " << slot << "(%rbp)\n";
-    out << "for_" << label << ":"<<endl;
-    
-    stm->finish->accept(this);
-    out << " movq %rax, %rcx" <<endl;
-    out << " movq " << slot << "(%rbp), %rax" <<endl;
-    out << " cmpq %rcx, %rax" << endl;
-    out << " movl $0, %eax" << endl;
-    if (stm->equal)
-        out << " setle %al" << endl;
-    else
-        out << " setl %al" << endl;
-    out << " movzbq %al, %rax" << endl;
-    out << " cmpq $0, %rax" << endl;
-    out << " je endfor_" << label << endl;
-    
-    stm->body->accept(this);
-    out << " movq " << slot << "(%rbp), %rax" <<endl;
-    out << " addq $1, %rax" << endl;
-    out << " movq %rax, " << slot << "(%rbp)" << endl;
 
-    out << " jmp for_" << label << endl;
-    out << "endfor_" << label << ":" << endl;
-    memoria->remove_level();
+    out << ".Lfor_" << lbl << ":\n";
+
+    // condición
+    f->finish->accept(this);
+    out << " movq %rax, %rcx\n";
+    out << " movq " << slot << "(%rbp), %rax\n";
+    out << " cmpq %rcx, %rax\n";
+    if (f->equal) {
+        // while i <= finish
+        out << " jg .Lendfor_" << lbl << "\n";
+    } else {
+        // while i < finish
+        out << " jge .Lendfor_" << lbl << "\n";
+    }
+
+    // cuerpo
+    f->body->accept(this);
+
+    // i++
+    out << " movq " << slot << "(%rbp), %rax\n";
+    out << " addq $1, %rax\n";
+    out << " movq %rax, " << slot << "(%rbp)\n";
+
+    out << " jmp .Lfor_" << lbl << "\n";
+    out << ".Lendfor_" << lbl << ":\n";
     return 0;
 }
 
-int GenCodeVisitor::visit(WhileStm* stm) {
-    int label = labelcont++;
-    out << "while_" << label << ":"<<endl;
-    stm->condition->accept(this);
-    out << " cmpq $0, %rax" << endl;
-    out << " je endwhile_" << label << endl;
-    stm->body->accept(this);
-    out << " jmp while_" << label << endl;
-    out << "endwhile_" << label << ":"<< endl;
+int GenCodeVisitor::visit(WhileStm* w) {
+    int lbl = labelCount++;
+
+    out << ".Lwhile_" << lbl << ":\n";
+    w->condition->accept(this);
+    out << " cmpq $0, %rax\n";
+    out << " je .Lendwhile_" << lbl << "\n";
+    w->body->accept(this);
+    out << " jmp .Lwhile_" << lbl << "\n";
+    out << ".Lendwhile_" << lbl << ":\n";
     return 0;
 }
 
+int GenCodeVisitor::visit(IfStm* i) {
+    int lbl = labelCount++;
 
-int GenCodeVisitor::visit(IfStm* stm) {
-    int label = labelcont++;
-    stm->condition->accept(this);
-    out << " cmpq $0, %rax"<<endl;
-    out << " je else_" << label << endl;
-    int a = offset;
-    stm->ifbody->accept(this);
-    out << " jmp endif_" << label << endl;
-    out << " else_" << label << ":"<< endl;
-    offset = a;
-    if (stm->elsecond) stm->elsebody->accept(this);
-    out << "endif_" << label << ":"<< endl;
+    i->condition->accept(this);
+    out << " cmpq $0, %rax\n";
+    out << " je .Lelse_" << lbl << "\n";
+
+    i->ifbody->accept(this);
+    out << " jmp .Lendif_" << lbl << "\n";
+
+    out << ".Lelse_" << lbl << ":\n";
+    if (i->elsecond && i->elsebody) {
+        i->elsebody->accept(this);
+    }
+
+    out << ".Lendif_" << lbl << ":\n";
     return 0;
 }
 
+int GenCodeVisitor::visit(StructStm* s) {
+    FieldAccessExp fa(s->object, s->field);
+    s->value->accept(this);
+    out << " pushq %rax\n";
+    emitLValueAddr(&fa);
+    out << " movq %rax, %rdx\n";
+    out << " popq %rax\n";
+    out << " movq %rax, (%rdx)\n";
+    return 0;
+}
+
+int GenCodeVisitor::visit(ArrayStm* s) {
+    ArrayAccessExp aa(s->array, s->index);
+    s->value->accept(this);
+    out << " pushq %rax\n";
+    emitLValueAddr(&aa);
+    out << " movq %rax, %rdx\n";
+    out << " popq %rax\n";
+    out << " movq %rax, (%rdx)\n";
+    return 0;
+}

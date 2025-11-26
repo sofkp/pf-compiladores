@@ -12,10 +12,12 @@ private:
     bool check(Token::Type ttype);   // Comprueba si el token actual es de cierto tipo, sin avanzar
     bool advance();                  // Avanza al siguiente token
     bool isAtEnd();                  // Comprueba si ya se llegó al final de la entrada
+    TypeInfo* parseType();
 public:
     Parser(Scanner* scanner);       
     Program* parseProgram();
     FunDec* parseFunDec();
+    StructDec* parseStructDec();
     Body* parseBody();
     GlobalVarDec* parseGlobalVarDec();
     LocalVarDec* parseLocalVarDec();
@@ -23,6 +25,7 @@ public:
     Exp* parseCE();
     Exp* parseE();
     Exp* parseT();
+    Exp* parseI();
     Exp* parseF();
 };
 

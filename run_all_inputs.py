@@ -21,8 +21,8 @@ input_dir = "inputs"
 output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
-for i in range(1, 15):
-    filename = f"input{i}.txt"
+for i in range(1, 6):
+    filename = f"impl{i}.txt"
     filepath = os.path.join(input_dir, filename)
 
     if os.path.isfile(filepath):
@@ -32,12 +32,12 @@ for i in range(1, 15):
 
         
         # Archivos generados
-        tokens_file = os.path.join(input_dir, f"input{i}.s")  # se crea en inputs/
+        tokens_file = os.path.join(input_dir, f"funcion{i}.s")  # se crea en inputs/
       
 
         # Mover archivo de tokens si existe
         if os.path.isfile(tokens_file):
-            dest_tokens = os.path.join(output_dir, f"input_{i}.s")
+            dest_tokens = os.path.join(output_dir, f"funcion_{i}.s")
             shutil.move(tokens_file, dest_tokens)
 
 

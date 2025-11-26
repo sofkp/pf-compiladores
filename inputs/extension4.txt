@@ -1,0 +1,6 @@
+fn printstr(x: i64) { println!(x); }
+
+fn main() {
+    let s = "hola";
+    println!(1);
+}

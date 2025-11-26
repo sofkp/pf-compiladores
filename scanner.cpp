@@ -75,11 +75,14 @@ Token* Scanner::nextToken() {
         else if (lexema=="bool") return new Token(Token::BOOL, input, first, current - first);
         else if (lexema=="static") return new Token(Token::STATIC, input, first, current - first);
         else if (lexema=="return") return new Token(Token::RETURN, input, first, current - first);
+        else if (lexema=="struct") return new Token(Token::STRUCT, input, first, current - first);
+        else if (lexema=="string") return new Token(Token::STRINGTYPE, input, first, current - first);
         else return new Token(Token::ID, input, first, current - first);
     }
     // Operadores
     else if (c=='+' || c=='-' || c=='*' || c=='/' || c=='(' || c==')' || c=='{' || c=='}' ||
-            c==';' || c==',' || c==':' || c=='<' || c=='>' || c=='=' || c=='.') {
+            c==';' || c==',' || c==':' || c=='<' || c=='>' || c=='=' || c=='.' ||  c=='[' ||
+            c==']' || c=='"' || c=='.') {
         switch (c) {
             case '<': 
             if (current + 1 < input.length() && input[current+1]=='='){
@@ -127,8 +130,20 @@ Token* Scanner::nextToken() {
                     token = new Token(Token::REQ, input, first, current + 1 - first);
                 }
                 else token = new Token(Token::RG, input, first, current + 1 - first);
+            }else {
+                token = new Token(Token::DOT, '.');
             }
             break;
+            case '"': {
+                current++;
+                while (current < input.length() && input[current] != '"') {
+                    current++;
+                }
+                current++; 
+                return new Token(Token::STRING, input, first+1, current - first-2);
+            } break;
+            case '[': token = new Token(Token::LBRACKET,c); break;
+            case ']': token = new Token(Token::RBRACKET,c); break;
 
         }
         current++;

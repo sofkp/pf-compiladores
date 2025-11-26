@@ -1,8 +1,0 @@
-fn main() {
-    let x: i32 = 7;
-    println!(x < 5);
-    println!(x <= 7);
-    println!(x == 7);
-    println!(x > 10);
-    println!(x >= 3);
-}

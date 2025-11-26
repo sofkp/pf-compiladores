@@ -1,0 +1,84 @@
+struct Pair {
+    a: i64,
+    b: i64
+}
+
+struct Vec3 {
+    x: i64,
+    y: i64,
+    z: i64
+}
+
+static mut G1: i64 = 10;
+static G2: i64 = 3;
+static mut GARR: [i64;3] = [7,8,9];
+
+fn makepair(x:i64, y:i64) -> Pair {
+    let p = Pair { a:x, b:y };
+    return p;
+}
+
+fn addvec(u:Vec3, v:Vec3) -> Vec3 {
+    let r = Vec3 {
+        x: u.x + v.x,
+        y: u.y + v.y,
+        z: u.z + v.z
+    };
+    return r;
+}
+
+fn buildarr(a:i64, b:i64, c:i64) -> [i64;3] {
+    let arr = [a, b, c];
+    return arr;
+}
+
+fn sumarr(v:[i64;3]) -> i64 {
+    let mut s:i64 = 0;
+
+    s = s + v[0];
+    s = s + v[1];
+    s = s + v[2];
+
+    return s;
+}
+
+fn testloops(n:i64) -> i64 {
+    let mut acc:i64 = 0;
+
+    for i in 0..n {
+        acc = acc + i;
+    }
+
+    while acc > 100 {
+        acc = acc - 5;
+    }
+
+    return acc;
+}
+
+fn main() {
+    let q = makepair(10, 20);
+    println!(q.a);
+    println!(q.b);
+
+    let v1 = Vec3 { x:1, y:2, z:3 };
+    let v2 = Vec3 { x:4, y:5, z:6 };
+    let v3 = addvec(v1, v2);
+    println!(v3.x);
+    println!(v3.y);
+    println!(v3.z);
+
+    let arr = buildarr(3,4,5);
+    println!(sumarr(arr));
+
+    let s = testloops(15);
+    println!(s);
+
+    if s >= 20 {
+        println!(G1);
+    } else {
+        println!(G2);
+    }
+
+    println!(GARR[2]);
+}

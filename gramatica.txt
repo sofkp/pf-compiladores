@@ -1,26 +1,40 @@
 Program ::= GlobalVarDecList  FunDecList
-GlobalVarDecList ::= GlobalVar (GlobalVar)* | ε
+GlobalVarDecList ::= (GlobalVar | StructDec)*
 FunDecList ::= (FunDec)+ 
-GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp ';'
-Type ::= 'i32' | 'i64' | 'bool'
+GlobalVar ::= 'static' ('mut')? id ':' Type '=' CExp ';' | 'static' ('mut')? id '=' CExp ';'
+StructDec ::= 'struct' id '{' StructFieldList '}'
+StructFieldList ::= StructField (',' StructField )* | ε
+StructField ::= id ':' Type
+Type ::= 'i32' | 'i64' | 'bool' | ArrayType | StructType
+ArrayType ::= '[' Type ';' Num ']'
+StructType ::= id
 FunDec ::= 'fn' id '(' (ParamDecList)? ')' ('->' Type)?  Body
 ParamDecList ::= ParamDec (',' ParamDec)*
 ParamDec ::= Type id
 Body ::= '{' LocalVarDecList StmList '}'
 LocalVarDecList ::= LocalVar (LocalVar)* | ε
-LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? ';'
+LocalVar ::= 'let' ('mut')? id ':' Type ('=' CExp)? ';' | 'let' ('mut')? id '=' CExp ';'
 StmList  ::= Stm (';' Stm)*
-Stm ::= id '=' CExp | 
-        id '(' (ArgList)? ')' | 
-        'println!' '(' CExp ')' | 
-        'return' CExp | 
-        'if' CExp Body ('else' Body)?  | 
-        'while' CExp Body | 
-        'for' id 'in' CExp ('..' | '..=') CExp Body
+Stm ::= id '=' CExp  
+      | id '(' (ArgList)? ')'  
+      | 'println!' '(' CExp ')' 
+      | 'return' CExp
+      | 'if' CExp Body ('else' Body)?
+      | 'while' CExp Body
+      | 'for' id 'in' CExp ('..' | '..=') CExp Body
+      | Cexp '.' id '=' Cexp //struct assign
+        Cexp '[' Cexp ']' '=' Cexp //array assign
 CExp ::= Exp (('<' | '<=' | '==' | '>' | '>=') Exp)?
 Exp ::= Term (('+' | '-') Term)∗
 Term ::= Factor (('*' | '/') Factor)∗
-Factor ::= id | Num | Bool | '('Exp')' | id '(' (ArgList)? ')'
+Factor ::= id | Num | Bool | '('Exp')' | id '(' (ArgList)? ')' | 
+        Array | Struct | String | IndexedAccess | FieldAccess
 ArgList ::= CExp (',' CExp)∗
 Bool ::= 'true' | 'false'
-
+String ::= '"' id '"'
+Array ::= '[' (CExp (',' CExp)*)? ']'
+IndexedAccess ::= CExp '[' CExp ']'
+Struct ::= id '{' StructLitFields '}'
+StructLitFields ::= StructLitField (',' StructLitField)* | ε
+StructLitField ::= id ':' CExp
+FieldAccess ::= CExp '.' id

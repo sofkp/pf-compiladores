@@ -1,0 +1,15 @@
+struct Node {
+    x:i64,
+    y:i64
+}
+
+fn mk() -> Node {
+    let n = Node { x:10, y:20 };
+    return n;
+}
+
+fn main() {
+    let r = mk();
+    println!(r.x);
+    println!(r.y);
+}

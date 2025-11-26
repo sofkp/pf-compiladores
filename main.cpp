@@ -56,33 +56,24 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    // ======== VISITOR (IMPRESIÓN) ========
-    {
-        string visitorFile = "outputs/" + base + "_visitor.txt";
-        ofstream vout(visitorFile);
-        if (!vout.is_open()) return 1;
-
-        streambuf* old = cout.rdbuf(vout.rdbuf());
-
-        PrintVisitor pv;
-        pv.imprimir(ast);
-
-        EVALVisitor ev;
-        ev.interprete(ast);
-
-        cout.rdbuf(old);
-    }
-
     // ======== GENCODE ========
     {
         string asmFile = "outputs/" + base + ".s";
         ofstream aout(asmFile);
-        if (!aout.is_open()) return 1;
+        if (!aout.is_open()) {
+            cerr << "No se pudo crear el archivo ASM: " << asmFile << "\n";
+            return 1;
+        }
 
-        GenCodeVisitor gc(aout);
-        gc.generar(ast);
+        try {
+            GenCodeVisitor gc(aout);
+            gc.generate(ast);
+            cout << "ASM generado en: " << asmFile << "\n";
+        } catch (const std::exception& e) {
+            cerr << "ERROR en typecheck/codegen: " << e.what() << "\n";
+            return 1;
+        }
     }
 
-    cout << "Archivos generados en /outputs\n";
     return 0;
 }

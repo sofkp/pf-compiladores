@@ -49,7 +49,13 @@ public:
         STATIC,
         RETURN,
         PRINT, //println!
-        END
+        END,
+        LBRACKET,
+        RBRACKET,
+        STRING,
+        STRINGTYPE,
+        STRUCT,
+        DOT
     };
 
     // Atributos

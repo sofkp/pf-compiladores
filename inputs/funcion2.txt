@@ -1,0 +1,16 @@
+
+struct Pair {
+    a:i64,
+    b:i64
+}
+
+fn makepair(x:i64, y:i64) -> Pair {
+    let p = Pair { a:x, b:y };
+    return p;
+}
+
+fn main() {
+    let q = makepair(10, 20);
+    println!(q.a);
+    println!(q.b);
+}
