@@ -130,45 +130,77 @@ public:
     int visit(IfStm*) override;
 };
 
-/* ============================================================
-   GEN CODE VISITOR (X86-64 REAL)
-   ============================================================ */
+class ConstEnv {
+public:
+    vector<unordered_map<string,long>> mem;
+    vector<unordered_map<string,bool>> isConst;
+
+    void clear() { mem.clear(); isConst.clear(); }
+    void push()  { mem.emplace_back(); isConst.emplace_back(); }
+    void pop()   { mem.pop_back(); isConst.pop_back(); }
+
+    void declare(const string& id) {
+        mem.back()[id] = 0;
+        isConst.back()[id] = false;
+    }
+
+    void setConst(const string& id, long v) {
+        for (int i = (int)mem.size()-1; i >= 0; i--) {
+            if (mem[i].count(id)) {
+                mem[i][id] = v;
+                isConst[i][id] = true;
+                return;
+            }
+        }
+        mem.back()[id] = v;
+        isConst.back()[id] = true;
+    }
+
+    void unsetConst(const string& id) {
+        for (int i = (int)mem.size()-1; i >= 0; i--) {
+            if (mem[i].count(id)) {
+                isConst[i][id] = false;
+                return;
+            }
+        }
+    }
+
+    bool getConst(const string& id, long &out) const {
+        for (int i = (int)mem.size()-1; i >= 0; i--) {
+            if (mem[i].count(id)) {
+                if (isConst[i].at(id)) {
+                    out = mem[i].at(id);
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+};
+
 
 class GenCodeVisitor : public Visitor {
 public:
     ostream& out;
 
-    // typechecker usado para expTypes y layouts
-    TypeCheckerVisitor tc;
-
-    // tabla real de offsets en stack
+    TypeCheckerVisitor tipe;
     Environment<int> envStack;
-
-    // layouts de struct para x86
     unordered_map<string,StructLayout> layouts;
-
-    // manejo de strings en .rodata
     unordered_map<string,string> strLabels;
     int strCount;
-
-    // nombre de funcion actual
     string currentFun;
-
-    // offset actual en stack
     int offset;
-
-    // contador de labels
     int labelCount;
+    ConstEnv constEnv;
 
     GenCodeVisitor(ostream& o);
 
-    /* ===== Helpers ===== */
     void buildStructLayouts(Program* p);
-    void emitLValueAddr(Exp* e); // coloca dirección en %rax
+    void emitLValueAddr(Exp* e);
     void copyStruct(int size);
     void copyArray(int size);
 
-    /* ===== Visit ===== */
     int generate(Program* p);
 
     int visit(Program*) override;
@@ -198,5 +230,75 @@ public:
     int visit(WhileStm*) override;
     int visit(IfStm*) override;
 };
+
+class ConstVisitor : public Visitor {
+public:
+    ConstEnv* env;
+
+    ConstVisitor(ConstEnv* e) : env(e) {}
+
+    int visit(NumberExp* e) override {
+        e->cont = 1;
+        e->valor = e->value;
+        return 0;
+    }
+
+    int visit(IdExp* e) override {
+        long v;
+        if (env->getConst(e->value, v)) {
+            e->cont = 1;
+            e->valor = v;
+        } else e->cont = 0;
+        return 0;
+    }
+
+    int visit(BinaryExp* e) override {
+        e->left->accept(this);
+        e->right->accept(this);
+
+        if (e->left->cont == 1 && e->right->cont == 1) {
+            e->cont = 1;
+            long a = e->left->valor;
+            long b = e->right->valor;
+            switch (e->op){
+                case PLUS_OP: e->valor = a+b; break;
+                case MINUS_OP: e->valor = a-b; break;
+                case MUL_OP: e->valor = a*b; break;
+                case DIV_OP: if (b==0) e->cont=0; else e->valor=a/b; break;
+                case LT_OP: e->valor = (a<b); break;
+                case LE_OP: e->valor = (a<=b); break;
+                case GT_OP: e->valor = (a>b); break;
+                case GE_OP: e->valor = (a>=b); break;
+                case EQ_OP: e->valor = (a==b); break;
+                default: e->cont = 0;
+            }
+        } else e->cont = 0;
+
+        return 0;
+    }
+
+    int visit(Program*) override { return 0; }
+    int visit(FunDec*) override { return 0; }
+    int visit(StructDec*) override { return 0; }
+    int visit(GlobalVarDec*) override { return 0; }
+    int visit(LocalVarDec*) override { return 0; }
+    int visit(Body*) override { return 0; }
+    int visit(FcallExp*) override { return 0; }
+    int visit(StructInitExp*) override { return 0; }
+    int visit(ArrayExp*) override { return 0; }
+    int visit(ArrayAccessExp*) override { return 0; }
+    int visit(StringExp*) override { return 0; }
+    int visit(FieldAccessExp*) override { return 0; }
+    int visit(AssignStm*) override { return 0; }
+    int visit(FcallStm*) override { return 0; }
+    int visit(PrintStm*) override { return 0; }
+    int visit(ReturnStm*) override { return 0; }
+    int visit(StructStm*) override { return 0; }
+    int visit(ArrayStm*) override { return 0; }
+    int visit(ForStm*) override { return 0; }
+    int visit(WhileStm*) override { return 0; }
+    int visit(IfStm*) override { return 0; }
+};
+
 
 #endif

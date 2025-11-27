@@ -180,14 +180,10 @@ int ejecutar_scanner(Scanner* scanner, const string& InputFile) {
     string base = InputFile;
     size_t slash = base.find_last_of("/\\");
     if (slash != string::npos) base = base.substr(slash + 1);
-
     size_t dot = base.find_last_of(".");
-    string baseName = (dot == string::npos) ? base : base.substr(0, dot);
+    if (dot != string::npos) base = base.substr(0, dot);
 
-    // baseName = "input3" → extraemos el "3"
-    string suffix = baseName.substr(5);  
-
-    string OutputFileName = outDir + "token" + suffix + ".txt";
+    string OutputFileName = outDir + base + "tokens_.txt";
 
     ofstream outFile(OutputFileName);
     if (!outFile.is_open()) {

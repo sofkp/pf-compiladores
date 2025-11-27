@@ -11,13 +11,25 @@ class Visitor;
 class VarDec;
 
 enum BinaryOp { 
-    PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,
-    LT_OP, LE_OP, GT_OP, GE_OP, EQ_OP
+    PLUS_OP,
+    MINUS_OP,
+    MUL_OP,
+    DIV_OP,
+    LT_OP,
+    LE_OP,
+    GT_OP,
+    GE_OP,
+    EQ_OP
 };
 
 enum TypeKind {
-    T_I32, T_I64, T_BOOL, T_STRING,
-    T_ARRAY, T_STRUCT, T_UNKNOWN
+    T_I32,
+    T_I64,
+    T_BOOL,
+    T_STRING,
+    T_ARRAY,
+    T_STRUCT,
+    T_UNKNOWN
 };
 
 struct TypeInfo {
@@ -35,6 +47,8 @@ struct TypeInfo {
 class Exp {
 public:
     TypeInfo* inferredType;
+    int cont = 0;
+    long valor = 0;
     Exp();
     virtual int accept(Visitor* visitor) = 0;
     virtual ~Exp() = 0;

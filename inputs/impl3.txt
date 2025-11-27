@@ -1,4 +1,4 @@
-static mut MAX: i64 = 100;
+static mut MAX: i32 = 10;
 
 fn main() -> i32 {
     let mut i: i32 = 0;

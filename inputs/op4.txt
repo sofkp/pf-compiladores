@@ -1,0 +1,7 @@
+fn main() {
+    if (10 - 10) {
+        println!(111);
+    } else {
+        println!(222);
+    }
+}

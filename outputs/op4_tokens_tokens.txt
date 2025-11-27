@@ -1,0 +1,32 @@
+Scanner
+
+TOKEN(FN, "fn")
+TOKEN(ID, "main")
+TOKEN(LPAREN, "(")
+TOKEN(RPAREN, ")")
+TOKEN(LBRACE, "{")
+TOKEN(IF, "if")
+TOKEN(LPAREN, "(")
+TOKEN(NUM, "10")
+TOKEN(MINUS, "-")
+TOKEN(NUM, "10")
+TOKEN(RPAREN, ")")
+TOKEN(LBRACE, "{")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(NUM, "111")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(RBRACE, "}")
+TOKEN(ELSE, "else")
+TOKEN(LBRACE, "{")
+TOKEN(PRINT, "println!")
+TOKEN(LPAREN, "(")
+TOKEN(NUM, "222")
+TOKEN(RPAREN, ")")
+TOKEN(SEMICOL, ";")
+TOKEN(RBRACE, "}")
+TOKEN(RBRACE, "}")
+
+
+Scanner exitoso

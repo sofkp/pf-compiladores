@@ -5,24 +5,10 @@ print_int_fmt: .string "%ld\n"
 main:
  pushq %rbp
  movq %rsp, %rbp
- subq $32, %rsp
- movq $14, %rax
+ subq $16, %rsp
+ movq $20, %rax
  movq %rax, -8(%rbp)
- movq $2, %rax
- movq %rax, -16(%rbp)
  movq -8(%rbp), %rax
- pushq %rax
- movq -16(%rbp), %rax
- pushq %rax
- movq $3, %rax
- movq %rax, %rcx
- popq %rax
- imulq %rcx, %rax
- movq %rax, %rcx
- popq %rax
- addq %rcx, %rax
- movq %rax, -24(%rbp)
- movq -24(%rbp), %rax
  movq %rax, %rsi
  leaq print_int_fmt(%rip), %rdi
  movl $0, %eax

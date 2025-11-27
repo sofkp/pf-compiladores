@@ -227,13 +227,7 @@ Body* Parser::parseBody() {
     return b;
 }
 
-/* ============================================================
-   STATEMENTS
-   ============================================================ */
-
 Stm* Parser::parseStm() {
-
-    /* ========== INICIO POR IDENTIFICADOR ========== */
     if (match(Token::ID)) {
 
         Exp* base = new IdExp(previous->text);
@@ -241,7 +235,6 @@ Stm* Parser::parseStm() {
 
         while (true) {
 
-            /* -------- CALL -------- */
             if (match(Token::LPAREN)) {
                 FcallExp* f = new FcallExp(((IdExp*)obj)->value);
 
@@ -256,7 +249,6 @@ Stm* Parser::parseStm() {
                 return new FcallStm(f);
             }
 
-            /* -------- ARRAY ACCESS -------- */
             if (match(Token::LBRACKET)) {
 
                 Exp* idx = parseCE();
@@ -272,7 +264,6 @@ Stm* Parser::parseStm() {
                 continue;
             }
 
-            /* -------- FIELD ACCESS -------- */
             if (match(Token::DOT)) {
                 match(Token::ID);
                 string field = previous->text;
@@ -290,7 +281,6 @@ Stm* Parser::parseStm() {
             break;
         }
 
-        /* -------- ASSIGN -------- */
         if (match(Token::ASSIGN)) {
             Exp* v = parseCE();
             match(Token::SEMICOL);
@@ -300,7 +290,6 @@ Stm* Parser::parseStm() {
         throw runtime_error("Statement inválido");
     }
 
-    /* print */
     if (match(Token::PRINT)) {
         match(Token::LPAREN);
         Exp* e = parseCE();
@@ -309,14 +298,12 @@ Stm* Parser::parseStm() {
         return new PrintStm(e);
     }
 
-    /* return */
     if (match(Token::RETURN)) {
         Exp* e = parseCE();
         match(Token::SEMICOL);
         return new ReturnStm(e);
     }
 
-    /* if */
     if (match(Token::IF)) {
         Exp* cond = parseCE();
         Body* ifb = parseBody();
@@ -331,14 +318,12 @@ Stm* Parser::parseStm() {
         return new IfStm(cond, ifb, hasElse, elseb);
     }
 
-    /* while */
     if (match(Token::WHILE)) {
         Exp* c = parseCE();
         Body* b = parseBody();
         return new WhileStm(c, b);
     }
 
-    /* for */
     if (match(Token::FOR)) {
         match(Token::ID);
         string var = previous->text;
@@ -360,13 +345,9 @@ Stm* Parser::parseStm() {
     throw runtime_error("Statement inválido");
 }
 
-
-/* ============================================================
-   EXPRESSIONS
-   ============================================================ */
-
 Exp* Parser::parseCE() {
     Exp* l = parseE();
+    if (check(Token::LBRACE)) return l;
     if (match(Token::LE) || match(Token::LT) || match(Token::GE) ||
         match(Token::GT) || match(Token::EQ)) {
 
@@ -439,9 +420,14 @@ Exp* Parser::parseI() {
 
 Exp* Parser::parseF() {
 
-    if (match(Token::NUM))  return new NumberExp(stol(previous->text));
-    if (match(Token::TRUE)) return new NumberExp(1);
-    if (match(Token::FALSE))return new NumberExp(0);
+    if (match(Token::NUM))
+        return new NumberExp(stol(previous->text));
+
+    if (match(Token::TRUE)) 
+        return new NumberExp(1);
+
+    if (match(Token::FALSE))
+        return new NumberExp(0);
 
     if (match(Token::STRING))
         return new StringExp(previous->text);
@@ -452,7 +438,6 @@ Exp* Parser::parseF() {
         return e;
     }
 
-    /* array literal */
     if (match(Token::LBRACKET)){
         ArrayExp* arr = new ArrayExp();
         if (!check(Token::RBRACKET)){
@@ -464,8 +449,6 @@ Exp* Parser::parseF() {
         return arr;
     }
 
-
-    /* struct init: ID { ... } */
     if (match(Token::ID)) {
         string name = previous->text;
 
@@ -517,6 +500,7 @@ Exp* Parser::parseF() {
         }
         return e;
     }
-
-    throw runtime_error("Factor inválido");
+    
+    if (check(Token::LBRACE))
+        throw runtime_error("Factor inválido");
 }

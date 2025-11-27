@@ -30,11 +30,12 @@ for i in range(1, 6):
         run_cmd = ["./a.out", filepath]
         result = subprocess.run(run_cmd, capture_output=True, text=True)
 
-        
+        if result.returncode != 0:
+            print(f"[op{i}] ERROR:\n{result.stderr}")
+
         # Archivos generados
         tokens_file = os.path.join(input_dir, f"funcion{i}.s")  # se crea en inputs/
-      
-
+    
         # Mover archivo de tokens si existe
         if os.path.isfile(tokens_file):
             dest_tokens = os.path.join(output_dir, f"funcion_{i}.s")
