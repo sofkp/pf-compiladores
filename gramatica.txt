@@ -1,3 +1,49 @@
+Program ::= (StructDec | GlobalVarDec)* FunDec*
+GlobalVarDec ::= 'static' 'mut'? id (':' Type)? '=' CExp ';'
+StructDec ::= 'struct' id '{' StructFieldList '}'
+StructFieldList ::= StructField (',' StructField)* | ε
+StructField ::= id ':' Type
+Type ::= 'i32' | 'i64' | 'bool' | id | ArrayType
+ArrayType ::= '[' Type ';' NUM ']'
+FunDec ::= 'fn' id '(' ParamList? ')' ReturnType? Body
+ReturnType ::= '->' Type
+ParamList ::= Param (',' Param)*
+Param ::= id ':' Type
+Body ::= '{' LocalVarDec* Stm* '}'
+LocalVarDec ::= 'let' 'mut'? id (':' Type)? ('=' CExp)? ';'
+Stm ::= AssignStm
+    | CallStm
+    | PrintStm
+    | ReturnStm
+    | IfStm
+    | WhileStm
+    | ForStm
+    | BlockStm
+AssignStm ::= LHS '=' CExp ';'
+LHS ::= id
+        | LHS '[' CExp ']'
+        | LHS '.' id
+CallStm ::= id '(' ArgList? ')' ';'
+ArgList ::= CExp (',' CExp)*
+PrintStm ::= 'println!' '(' CExp (',' CExp)* ')' ';'
+ReturnStm ::= 'return' CExp ';'
+IfStm ::= 'if' CExp Body ('else' Body)?
+WhileStm ::= 'while' CExp Body
+ForStm ::= 'for' id 'in' CExp RangeOp CExp Body
+RangeOp ::= '..' | '..='
+BlockStm ::= Body
+CExp ::= Exp (('<' | '<=' | '==' | '>' | '>=') Exp)?
+Exp ::= Term (('+' | '-') Term)∗
+Term ::= Factor (('*' | '/') Factor)∗
+Factor ::= Primary PostfixPart*
+Primary ::= id | Num | Bool | String | '(' CExp ')' | ArrayLit | StructLit
+PostfixPart ::= '[' CExp ']' | '.' id | '(' ArgList? ')'
+ArrayLit ::= '[' (CExp (',' CExp)*)? ']'
+StructLit ::= id '{' StructLitFields '}'
+StructLitFields ::= StructLitField (',' StructLitField)* | ε
+StructLitField ::= id ':' CExp
+
+
 Program ::= GlobalVarDecList  FunDecList
 GlobalVarDecList ::= (GlobalVar | StructDec)*
 FunDecList ::= (FunDec)+ 

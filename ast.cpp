@@ -108,8 +108,9 @@ FcallStm::FcallStm(FcallExp* expresion){
 FcallStm::~FcallStm(){}
 
 // ------------------PrintStm ------------------
-PrintStm::PrintStm(Exp* expresion){
-    e=expresion;
+PrintStm::PrintStm(Exp* f, const vector<Exp*> a) {
+    pre = f;
+    args = a;
 }
 PrintStm::~PrintStm(){}
 

@@ -10,17 +10,11 @@
 
 using namespace std;
 
-/* ============================================================
-   Struct Layout para código x86
-   ============================================================ */
 struct StructLayout {
     int sizeBytes;
     unordered_map<string,int> fieldOffset;
 };
 
-/* ============================================================
-   Función y Struct Info para el TypeChecker
-   ============================================================ */
 struct FunInfo {
     TypeInfo* ret;
     vector<TypeInfo*> params;
@@ -32,10 +26,6 @@ struct StructInfo {
     unordered_map<string,int> index;
     int sizeBytes;
 };
-
-/* ============================================================
-   Visitor Base
-   ============================================================ */
 
 class Visitor {
 public:
@@ -65,41 +55,28 @@ public:
     virtual int visit(ForStm*) = 0;
     virtual int visit(WhileStm*) = 0;
     virtual int visit(IfStm*) = 0;
+    virtual int visit(BlockStm*) = 0;
 };
 
-/* ============================================================
-   TYPE CHECKER (INFERECIA COMPLETA)
-   ============================================================ */
 
 class TypeCheckerVisitor : public Visitor {
 public:
-
-    // entorno de tipos
     Environment<TypeInfo*> tenv;
-
-    // tablas globales de tipos
     unordered_map<string,StructInfo> structs;
     unordered_map<string,FunInfo> funcs;
-
-    // mapa de tipo inferido por expresión
     unordered_map<Exp*,TypeInfo*> inferred;
-
-    // retorno de la función actual
     string currentFun;
     TypeInfo* expectedReturn;
 
-    // conteo de variables locales
     int localCount;
     unordered_map<string,int> funLocalCount;
 
-    /* ===== Helpers ===== */
-    TypeInfo* makeSimple(TypeKind k);
+    TypeInfo* convert(TypeKind k);
     bool same(TypeInfo* a, TypeInfo* b);
     bool numeric(TypeInfo* a);
-    TypeInfo* unifyNum(TypeInfo* a, TypeInfo* b);
+    TypeInfo* makeSame(TypeInfo* a, TypeInfo* b);
     TypeInfo* get(Exp* e);
 
-    /* ===== Type Checking ===== */
     int typeCheck(Program* p);
 
     int visit(Program*) override;
@@ -128,6 +105,7 @@ public:
     int visit(ForStm*) override;
     int visit(WhileStm*) override;
     int visit(IfStm*) override;
+    int visit(BlockStm*) override;
 };
 
 class ConstEnv {
@@ -138,7 +116,7 @@ public:
     void clear() { mem.clear(); isConst.clear(); }
     void push()  { mem.emplace_back(); isConst.emplace_back(); }
     void pop()   { mem.pop_back(); isConst.pop_back(); }
-
+    
     void declare(const string& id) {
         mem.back()[id] = 0;
         isConst.back()[id] = false;
@@ -198,8 +176,6 @@ public:
 
     void buildStructLayouts(Program* p);
     void emitLValueAddr(Exp* e);
-    void copyStruct(int size);
-    void copyArray(int size);
 
     int generate(Program* p);
 
@@ -229,6 +205,7 @@ public:
     int visit(ForStm*) override;
     int visit(WhileStm*) override;
     int visit(IfStm*) override;
+    int visit(BlockStm*) override;
 };
 
 class ConstVisitor : public Visitor {
@@ -298,6 +275,7 @@ public:
     int visit(ForStm*) override { return 0; }
     int visit(WhileStm*) override { return 0; }
     int visit(IfStm*) override { return 0; }
+    int visit(BlockStm*) override { return 0; }
 };
 
 

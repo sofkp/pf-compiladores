@@ -1,6 +1,10 @@
 fn main() {
-    let a = 3 + 5;
-    let b = a * 10;
-    let c = b - 7;
-    println!(c);
+    let x = 3 + 7;
+    let y = x * 2;
+
+    if (y == 20) {
+        println!(10);
+    } else {
+        println!(99);
+    }
 }

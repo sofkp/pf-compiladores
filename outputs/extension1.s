@@ -1,21 +1,20 @@
 .data
 print_int_fmt: .string "%ld\n"
+print_str_fmt: .string "%s\n"
 .text
 .globl main
 main:
  pushq %rbp
  movq %rsp, %rbp
  subq $16, %rsp
- pushq %r10
- subq $16, %rsp
- movq %rsp, %rax
- movq %rax, %r10
+ movq $16, %rdi
+ call malloc@PLT
+ movq %rax, %r11
  movq $20, %rax
- movq %rax, 0(%r10)
+ movq %rax, 0(%r11)
  movq $12345, %rax
- movq %rax, 8(%r10)
- movq %r10, %rax
- popq %r10
+ movq %rax, 8(%r11)
+ movq %r11, %rax
  movq %rax, -8(%rbp)
  movq -8(%rbp), %rax
  movq %rax, %rdx

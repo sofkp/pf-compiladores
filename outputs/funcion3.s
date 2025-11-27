@@ -1,5 +1,6 @@
 .data
 print_int_fmt: .string "%ld\n"
+print_str_fmt: .string "%s\n"
 .text
 .globl buildarr
 buildarr:

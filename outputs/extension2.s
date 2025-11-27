@@ -1,29 +1,26 @@
 .data
 print_int_fmt: .string "%ld\n"
+print_str_fmt: .string "%s\n"
 .text
 .globl main
 main:
  pushq %rbp
  movq %rsp, %rbp
  subq $16, %rsp
- pushq %r10
- subq $32, %rsp
- movq %rsp, %rax
+ movq $24, %rdi
+ call malloc@PLT
  movq %rax, %r10
- movq $1, %rax
+ movq $10, %rax
  movq %rax, 0(%r10)
- movq $2, %rax
+ movq $20, %rax
  movq %rax, 8(%r10)
- movq $3, %rax
+ movq $30, %rax
  movq %rax, 16(%r10)
- movq $4, %rax
- movq %rax, 24(%r10)
  movq %r10, %rax
- popq %r10
  movq %rax, -8(%rbp)
  movq -8(%rbp), %rax
  movq %rax, %rdx
- movq $2, %rax
+ movq $1, %rax
  imulq $8, %rax
  addq %rax, %rdx
  movq (%rdx), %rax
@@ -31,11 +28,26 @@ main:
  leaq print_int_fmt(%rip), %rdi
  movl $0, %eax
  call printf@PLT
- movq $99, %rax
+ movq -8(%rbp), %rax
+ movq %rax, %rdx
+ movq $0, %rax
+ imulq $8, %rax
+ addq %rax, %rdx
+ movq (%rdx), %rax
  pushq %rax
  movq -8(%rbp), %rax
  movq %rax, %rdx
  movq $2, %rax
+ imulq $8, %rax
+ addq %rax, %rdx
+ movq (%rdx), %rax
+ movq %rax, %rcx
+ popq %rax
+ addq %rcx, %rax
+ pushq %rax
+ movq -8(%rbp), %rax
+ movq %rax, %rdx
+ movq $1, %rax
  imulq $8, %rax
  addq %rax, %rdx
  movq %rdx, %rax
@@ -44,7 +56,7 @@ main:
  movq %rax, (%rdx)
  movq -8(%rbp), %rax
  movq %rax, %rdx
- movq $2, %rax
+ movq $1, %rax
  imulq $8, %rax
  addq %rax, %rdx
  movq (%rdx), %rax

@@ -1,6 +1,19 @@
+struct Curso {
+    codigo:&str,
+    profesor:&str
+}
+
 fn main() {
-    let a = 3 * 4 + 2;
-    let b = (10 - 6) / 2;
-    let c = a + b * 3;
-    println!(c);
+    let c1 = Curso { codigo:"EDA", profesor:"Victor Flores" };
+    let c2 = Curso { codigo:"Compiladores", profesor:"Julio Yarasca" };
+    let c3 = Curso { codigo:"Arquitectura", profesor:"Jorge Reaño" };
+
+    let catalogo = [c1, c2, c3];
+
+    println!("{}", catalogo[0].profesor);
+    println!("{}", catalogo[1].profesor);
+    println!("{}", catalogo[2].profesor);
+
+    catalogo[2].profesor = "Carlos Williams";
+    println!("{}", catalogo[2].profesor);
 }

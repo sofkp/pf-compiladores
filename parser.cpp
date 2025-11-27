@@ -6,6 +6,8 @@
 
 using namespace std;
 
+int order = 0;
+
 Parser::Parser(Scanner* sc) : scanner(sc) {
     previous = nullptr;
     current = scanner->nextToken();
@@ -44,12 +46,7 @@ bool Parser::isAtEnd() {
     return current->type == Token::END;
 }
 
-/* ============================================================
-   TYPE PARSER
-   ============================================================ */
-
 TypeInfo* Parser::parseType() {
-    // Array tipo:  [T; N]
     if (match(Token::LBRACKET)) {
         TypeInfo* elem = parseType();
         match(Token::SEMICOL);
@@ -62,17 +59,13 @@ TypeInfo* Parser::parseType() {
     if (match(Token::I32)) return new TypeInfo(T_I32);
     if (match(Token::I64)) return new TypeInfo(T_I64);
     if (match(Token::BOOL)) return new TypeInfo(T_BOOL);
+    if (match(Token::STRINGTYPE)) return new TypeInfo(T_STRING);
 
-    // nombre de struct
     if (match(Token::ID))
         return new TypeInfo(previous->text);
 
     throw runtime_error("Tipo inválido");
 }
-
-/* ============================================================
-   PROGRAM
-   ============================================================ */
 
 Program* Parser::parseProgram() {
     Program* p = new Program();
@@ -88,10 +81,6 @@ Program* Parser::parseProgram() {
 
     return p;
 }
-
-/* ============================================================
-   GLOBAL Y LOCAL VAR
-   ============================================================ */
 
 GlobalVarDec* Parser::parseGlobalVarDec() {
     match(Token::STATIC);
@@ -136,9 +125,6 @@ LocalVarDec* Parser::parseLocalVarDec() {
     return new LocalVarDec(name, t, mut, v);
 }
 
-/* ============================================================
-   STRUCT DEC
-   ============================================================ */
 
 StructDec* Parser::parseStructDec() {
     match(Token::STRUCT);
@@ -168,11 +154,8 @@ StructDec* Parser::parseStructDec() {
     return sd;
 }
 
-/* ============================================================
-   FUNCTION
-   ============================================================ */
-
 FunDec* Parser::parseFunDec() {
+    debugToken("parseFunDec entrada");
     match(Token::FN);
     match(Token::ID);
     string name = previous->text;
@@ -205,21 +188,19 @@ FunDec* Parser::parseFunDec() {
     return new FunDec(name, Pnames, Ptypes, ret, body);
 }
 
-/* ============================================================
-   BODY
-   ============================================================ */
-
 Body* Parser::parseBody() {
+    debugToken("parseBody entrada");
     Body* b = new Body();
     match(Token::LBRACE);
-
-    // Ahora recorremos TODO el bloque
-    // y cada vez que veamos un LET lo tratamos como declaración local.
     while (!check(Token::RBRACE)) {
         if (check(Token::LET)) {
-            b->declarations.push_back(parseLocalVarDec());
+           auto d = parseLocalVarDec();
+            d->order = order++;
+            b->declarations.push_back(d);
         } else {
-            b->StmList.push_back(parseStm());
+            auto s = parseStm();
+            s->order = order++;
+            b->StmList.push_back(s);
         }
     }
 
@@ -228,10 +209,17 @@ Body* Parser::parseBody() {
 }
 
 Stm* Parser::parseStm() {
+    debugToken("parseStm entrada");
     if (match(Token::ID)) {
 
         Exp* base = new IdExp(previous->text);
         Exp* obj = base;
+
+        if (match(Token::ASSIGN)) {
+            Exp* v = parseCE();
+            match(Token::SEMICOL);
+            return new AssignStm(base, v);
+        }
 
         while (true) {
 
@@ -281,22 +269,28 @@ Stm* Parser::parseStm() {
             break;
         }
 
-        if (match(Token::ASSIGN)) {
-            Exp* v = parseCE();
-            match(Token::SEMICOL);
-            return new AssignStm(base, v);
-        }
-
         throw runtime_error("Statement inválido");
     }
 
     if (match(Token::PRINT)) {
         match(Token::LPAREN);
-        Exp* e = parseCE();
+        Exp* pre = parseCE();
+
+        vector<Exp*> args;
+
+        if (match(Token::COMA)) {
+            args.push_back(parseCE());
+            while (match(Token::COMA)) {
+                args.push_back(parseCE());
+            }
+        }
+
         match(Token::RPAREN);
         match(Token::SEMICOL);
-        return new PrintStm(e);
+
+        return new PrintStm(pre, args);
     }
+
 
     if (match(Token::RETURN)) {
         Exp* e = parseCE();
@@ -346,6 +340,7 @@ Stm* Parser::parseStm() {
 }
 
 Exp* Parser::parseCE() {
+    debugToken("parseCE entrada");
     Exp* l = parseE();
     if (check(Token::LBRACE)) return l;
     if (match(Token::LE) || match(Token::LT) || match(Token::GE) ||
@@ -367,6 +362,7 @@ Exp* Parser::parseCE() {
 }
 
 Exp* Parser::parseE() {
+    debugToken("parseE entrada");
     Exp* l = parseT();
     while (match(Token::PLUS) || match(Token::MINUS)) {
         BinaryOp op = (previous->type == Token::PLUS) ? PLUS_OP : MINUS_OP;
@@ -377,6 +373,7 @@ Exp* Parser::parseE() {
 }
 
 Exp* Parser::parseT() {
+    debugToken("parseT entrada");
     Exp* l = parseI();
     while (match(Token::MUL) || match(Token::DIV)) {
         BinaryOp op = (previous->type == Token::MUL) ? MUL_OP : DIV_OP;
@@ -387,6 +384,7 @@ Exp* Parser::parseT() {
 }
 
 Exp* Parser::parseI() {
+    debugToken("parseI entrada");
     Exp* e = parseF();
 
     while (true) {
@@ -419,6 +417,7 @@ Exp* Parser::parseI() {
 }
 
 Exp* Parser::parseF() {
+    debugToken("parseF entrada");
 
     if (match(Token::NUM))
         return new NumberExp(stol(previous->text));
@@ -502,5 +501,16 @@ Exp* Parser::parseF() {
     }
     
     if (check(Token::LBRACE))
-        throw runtime_error("Factor inválido");
+        throw runtime_error("Factor inválido (se encontró '{')");
+    
+    string msg = "Error de sintaxis: Se esperaba una expresión (número, id, paréntesis), pero se encontró '"+ current->text +"'";
+    throw runtime_error(msg);
+}
+
+void Parser::debugToken(const string& where) {
+    cerr << "[DEBUG] En " << where 
+         << " | current=(" << (int)current->type << ",'" << current->text << "')"
+         << " previous=(" << (previous ? to_string((int)previous->type) : string("-1"))
+         << ",'" << (previous ? previous->text : string("")) << "')"
+         << ")\n";
 }

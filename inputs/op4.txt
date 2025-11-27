@@ -1,7 +1,13 @@
+struct P {
+    a:i64,
+    b:i64
+}
+
 fn main() {
-    if (10 - 10) {
-        println!(111);
+    let p = P { a:10, b:4 };
+    if (p.a - p.b == 6) {
+        println!(77);
     } else {
-        println!(222);
+        println!(88);
     }
 }

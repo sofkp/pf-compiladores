@@ -11,6 +11,6 @@ fn makepair(x:i64, y:i64) -> Pair {
 
 fn main() {
     let q = makepair(10, 20);
-    println!(q.a);
-    println!(q.b);
+    println!("{}", q.a);
+    println!("{}", q.b);
 }

@@ -1,84 +1,77 @@
-struct Pair {
-    a: i64,
-    b: i64
+struct Producto {
+    codigo: i64,
+    precio: i64,
+    stock: i64
 }
 
-struct Vec3 {
-    x: i64,
-    y: i64,
-    z: i64
+fn crear(c:i64, p:i64, s:i64) -> Producto {
+    let prod = Producto { codigo:c, precio:p, stock:s };
+    return prod;
 }
 
-static mut G1: i64 = 10;
-static G2: i64 = 3;
-static mut GARR: [i64;3] = [7,8,9];
-
-fn makepair(x:i64, y:i64) -> Pair {
-    let p = Pair { a:x, b:y };
-    return p;
+fn valortotal(prod:Producto) -> i64 {
+    return prod.precio * prod.stock;
 }
 
-fn addvec(u:Vec3, v:Vec3) -> Vec3 {
-    let r = Vec3 {
-        x: u.x + v.x,
-        y: u.y + v.y,
-        z: u.z + v.z
+fn venderunidades(prod:Producto, n:i64) -> Producto {
+    let nuevo = Producto {
+        codigo: prod.codigo,
+        precio: prod.precio,
+        stock: prod.stock - n
     };
-    return r;
+    return nuevo;
 }
 
-fn buildarr(a:i64, b:i64, c:i64) -> [i64;3] {
-    let arr = [a, b, c];
-    return arr;
-}
-
-fn sumarr(v:[i64;3]) -> i64 {
-    let mut s:i64 = 0;
-
-    s = s + v[0];
-    s = s + v[1];
-    s = s + v[2];
-
-    return s;
-}
-
-fn testloops(n:i64) -> i64 {
+fn sumararray(v:[i64;3]) -> i64 {
     let mut acc:i64 = 0;
-
-    for i in 0..n {
-        acc = acc + i;
-    }
-
-    while acc > 100 {
-        acc = acc - 5;
-    }
-
+    acc = acc + v[0];
+    acc = acc + v[1];
+    acc = acc + v[2];
     return acc;
 }
 
 fn main() {
-    let q = makepair(10, 20);
-    println!(q.a);
-    println!(q.b);
+    let p1 = crear(1001, 25, 10);
+    let p2 = crear(1002, 40, 5);
+    let p3 = crear(1003, 12, 20);
 
-    let v1 = Vec3 { x:1, y:2, z:3 };
-    let v2 = Vec3 { x:4, y:5, z:6 };
-    let v3 = addvec(v1, v2);
-    println!(v3.x);
-    println!(v3.y);
-    println!(v3.z);
+    println!("{}", p1.codigo);
+    println!("{}", p2.codigo);
+    println!("{}", p3.codigo);
 
-    let arr = buildarr(3,4,5);
-    println!(sumarr(arr));
+    let v1 = valortotal(p1);
+    let v2 = valortotal(p2);
+    let v3 = valortotal(p3);
 
-    let s = testloops(15);
-    println!(s);
+    println!("{}", v1);
+    println!("{}", v2);
+    println!("{}", v3);
 
-    if s >= 20 {
-        println!(G1);
-    } else {
-        println!(G2);
+    let arr = [v1, v2, v3];
+
+    println!("{}",sumararray(arr));
+
+    let p1v = venderunidades(p1, 3);
+    let p2v = venderunidades(p2, 1);
+
+    println!("{}", p1v.stock);
+    println!("{}", p2v.stock);
+
+    let mut s:i64 = p3.stock;
+    while s > 15 {
+        s = s - 2;
     }
+    println!("{}", s);
 
-    println!(GARR[2]);
+    let mut acc:i64 = 0;
+    for i in 0..3 {
+        acc = acc + arr[i];
+    }
+    println!("{}", acc);
+
+    if acc >= 200 {
+        println!("{}", p1.codigo);
+    } else {
+        println!("{}", p2.codigo);
+    }
 }

@@ -2,10 +2,11 @@
 #include "ast.h"
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
+#include <cstdint>
 
 using namespace std;
 
-// Cuenta locales (LocalVarDec + variables de for) de un Body recursivamente
 static int countLocalsInBody(Body* b) {
     if (!b) return 0;
     int c = 0;
@@ -14,7 +15,7 @@ static int countLocalsInBody(Body* b) {
 
     for (auto s : b->StmList) {
         if (auto f = dynamic_cast<ForStm*>(s)) {
-            c++; // variable del for
+            c++;
             c += countLocalsInBody(f->body);
         } else if (auto w = dynamic_cast<WhileStm*>(s)) {
             c += countLocalsInBody(w->body);
@@ -103,15 +104,34 @@ int StructStm::accept(Visitor* visitor) {
 int ArrayStm::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
+int BlockStm::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
 
+int Visitor::visit(BlockStm* s) {
+    s->body->accept(this);
+    return 0;
+}
+int TypeCheckerVisitor::visit(BlockStm* s) {
+    s->body->accept(this);
+    return 0;
+}
+int GenCodeVisitor::visit(BlockStm* s) {
+    s->body->accept(this);
+    return 0;
+}
 
-TypeInfo* TypeCheckerVisitor::makeSimple(TypeKind k) {
+TypeInfo* TypeCheckerVisitor::convert(TypeKind k) {
     return new TypeInfo(k);
 }
 
 bool TypeCheckerVisitor::same(TypeInfo* a, TypeInfo* b) {
     if (a == b) return true;
     if (!a || !b) return false;
+
+    if (a->kind == T_I32 && b->kind == T_I64) return true;
+    if (a->kind == T_I64 && b->kind == T_I32) return true;
+
     if (a->kind != b->kind) return false;
 
     switch (a->kind) {
@@ -133,11 +153,15 @@ bool TypeCheckerVisitor::numeric(TypeInfo* a) {
     return a && (a->kind == T_I32 || a->kind == T_I64);
 }
 
-TypeInfo* TypeCheckerVisitor::unifyNum(TypeInfo* a, TypeInfo* b) {
+TypeInfo* TypeCheckerVisitor::makeSame(TypeInfo* a, TypeInfo* b) {
     if (!numeric(a) || !numeric(b)) {
         throw runtime_error("operación aritmética con tipo no numérico");
     }
-    return makeSimple(T_I64);
+
+    if (a->kind == T_I32 && b->kind == T_I32)
+        return convert(T_I32);
+
+    return convert(T_I64);
 }
 
 TypeInfo* TypeCheckerVisitor::get(Exp* e) {
@@ -147,7 +171,6 @@ TypeInfo* TypeCheckerVisitor::get(Exp* e) {
     }
     return it->second;
 }
-
 
 int TypeCheckerVisitor::typeCheck(Program* p) {
     tenv.clear();
@@ -182,7 +205,6 @@ int TypeCheckerVisitor::typeCheck(Program* p) {
     return 0;
 }
 
-
 int TypeCheckerVisitor::visit(Program* p) {
     return 0;
 }
@@ -191,7 +213,7 @@ int TypeCheckerVisitor::visit(StructDec* sd) {
     StructInfo info;
     info.fields = sd->fields;
     info.types  = sd->tipos;
-    info.sizeBytes = sd->fields.size() * 8;
+    info.sizeBytes = (int)sd->fields.size() * 8;
 
     for (int i = 0; i < (int)sd->fields.size(); i++) {
         info.index[sd->fields[i]] = i;
@@ -205,17 +227,17 @@ int TypeCheckerVisitor::visit(GlobalVarDec* vd) {
         vd->value->accept(this);
         TypeInfo* vt = get(vd->value);
 
-        if (!vd->type || vd->type->kind == T_UNKNOWN) {
-            vd->type = new TypeInfo(*vt);
-        }
-        else {
-            // si hay tipo declarado, verificar compatibilidad (incluyendo arrays)
+        if (vt->kind == T_UNKNOWN && vd->type && vd->type->kind != T_UNKNOWN) {
+            inferred[vd->value] = vd->type;
+            vd->value->inferredType = vd->type;
+        } else if (vd->type && vd->type->kind != T_UNKNOWN) {
             if (!same(vd->type, vt)) {
                 throw runtime_error("tipo del inicializador global '" + vd->name + "' incompatible");
             }
+        } else {
+            vd->type = new TypeInfo(*vt);
         }
     } else {
-        // sin valor, necesitamos al menos un tipo
         if (!vd->type || vd->type->kind == T_UNKNOWN) {
             throw runtime_error("variable global sin tipo ni valor: " + vd->name);
         }
@@ -225,7 +247,6 @@ int TypeCheckerVisitor::visit(GlobalVarDec* vd) {
     return 0;
 }
 
-
 int TypeCheckerVisitor::visit(LocalVarDec* vd) {
     if ((!vd->type || vd->type->kind == T_UNKNOWN) && !vd->value) {
         throw runtime_error(
@@ -233,17 +254,29 @@ int TypeCheckerVisitor::visit(LocalVarDec* vd) {
         );
     }
 
-    if (!vd->type || vd->type->kind == T_UNKNOWN) {
+    if (vd->value)
         vd->value->accept(this);
-        TypeInfo* vt = get(vd->value);
+
+    TypeInfo* vt = vd->value ? get(vd->value) : nullptr;
+
+    if (vd->value && vt->kind == T_UNKNOWN &&
+        vd->type && vd->type->kind != T_UNKNOWN) {
+
+        inferred[vd->value] = vd->type;
+        vd->value->inferredType = vd->type;
+    } else if (vd->value && vd->type && vd->type->kind != T_UNKNOWN) {
+        if (!same(vd->type, vt)) {
+            throw runtime_error("tipo incompatible en inicialización de '" + vd->name + "'");
+        }
+    } else if (!vd->type || vd->type->kind == T_UNKNOWN) {
         vd->type = new TypeInfo(*vt);
     }
 
     tenv.add_var(vd->name, vd->type);
     localCount++;
+
     return 0;
 }
-
 
 int TypeCheckerVisitor::visit(FunDec* f) {
     currentFun = f->nombre;
@@ -287,15 +320,23 @@ int TypeCheckerVisitor::visit(Body* body) {
     return 0;
 }
 
+
 int TypeCheckerVisitor::visit(NumberExp* e) {
-    TypeInfo* t = makeSimple(T_I64);
+    if (e->value >= INT32_MIN && e->value <= INT32_MAX) {
+        TypeInfo* t = convert(T_I32);
+        inferred[e] = t;
+        e->inferredType = t;
+        return 0;
+    }
+
+    TypeInfo* t = convert(T_I64);
     inferred[e] = t;
     e->inferredType = t;
     return 0;
 }
 
 int TypeCheckerVisitor::visit(StringExp* e) {
-    TypeInfo* t = makeSimple(T_STRING);
+    TypeInfo* t = convert(T_STRING);
     inferred[e] = t;
     e->inferredType = t;
     return 0;
@@ -322,14 +363,14 @@ int TypeCheckerVisitor::visit(BinaryExp* e) {
         case MINUS_OP:
         case MUL_OP:
         case DIV_OP: {
-            TypeInfo* t = unifyNum(tl, tr);
+            TypeInfo* t = makeSame(tl, tr);
             inferred[e] = t;
             e->inferredType = t;
             break;
         }
         default: {
-            (void)unifyNum(tl, tr);
-            TypeInfo* t = makeSimple(T_BOOL);
+            (void)makeSame(tl, tr);
+            TypeInfo* t = convert(T_BOOL);
             inferred[e] = t;
             e->inferredType = t;
             break;
@@ -357,7 +398,7 @@ int TypeCheckerVisitor::visit(FcallExp* f) {
         }
     }
 
-    TypeInfo* ret = info.ret ? info.ret : makeSimple(T_I64);
+    TypeInfo* ret = info.ret ? info.ret : convert(T_I64);
     inferred[f] = ret;
     f->inferredType = ret;
     return 0;
@@ -391,7 +432,7 @@ int TypeCheckerVisitor::visit(StructInitExp* s) {
         }
     }
 
-    TypeInfo* t = new TypeInfo(s->nombre); // T_STRUCT con nombre
+    TypeInfo* t = new TypeInfo(s->nombre);
     inferred[s] = t;
     s->inferredType = t;
     return 0;
@@ -399,7 +440,7 @@ int TypeCheckerVisitor::visit(StructInitExp* s) {
 
 int TypeCheckerVisitor::visit(ArrayExp* a) {
     if (a->elems.empty()) {
-        TypeInfo* elem = makeSimple(T_UNKNOWN);
+        TypeInfo* elem = convert(T_UNKNOWN);
         TypeInfo* t = new TypeInfo(T_ARRAY, elem, 0);
         inferred[a] = t;
         a->inferredType = t;
@@ -442,7 +483,6 @@ int TypeCheckerVisitor::visit(ArrayAccessExp* a) {
     a->inferredType = t;
     return 0;
 }
-
 
 int TypeCheckerVisitor::visit(FieldAccessExp* f) {
     f->obj->accept(this);
@@ -487,9 +527,15 @@ int TypeCheckerVisitor::visit(FcallStm* s) {
 }
 
 int TypeCheckerVisitor::visit(PrintStm* s) {
-    s->e->accept(this);
+    if (s->pre)
+        s->pre->accept(this);
+
+    for (auto arg : s->args)
+        arg->accept(this);
+
     return 0;
 }
+
 
 int TypeCheckerVisitor::visit(ReturnStm* r) {
     r->value->accept(this);
@@ -531,7 +577,7 @@ int TypeCheckerVisitor::visit(ArrayStm* s) {
 
 int TypeCheckerVisitor::visit(ForStm* f) {
     tenv.add_level();
-    TypeInfo* t = makeSimple(T_I64);
+    TypeInfo* t = convert(T_I64);
     tenv.add_var(f->var, t);
     localCount++;
 
@@ -539,7 +585,7 @@ int TypeCheckerVisitor::visit(ForStm* f) {
     f->finish->accept(this);
     TypeInfo* ts = get(f->start);
     TypeInfo* tf = get(f->finish);
-    (void)unifyNum(ts, tf);
+    (void)makeSame(ts, tf);
 
     f->body->accept(this);
 
@@ -596,14 +642,13 @@ void GenCodeVisitor::buildStructLayouts(Program* p) {
     }
 }
 
-// calcula la dirección de un lvalue en %rax
 void GenCodeVisitor::emitLValueAddr(Exp* e) {
     if (auto id = dynamic_cast<IdExp*>(e)) {
         int off;
         if (envStack.lookup(id->value, off)) {
-            out << " leaq " << off << "(%rbp), %rax\n"; // local/param en stack
+            out << " leaq " << off << "(%rbp), %rax\n";
         } else {
-            out << " leaq " << id->value << "(%rip), %rax\n"; // global
+            out << " leaq " << id->value << "(%rip), %rax\n";
         }
         return;
     }
@@ -619,12 +664,14 @@ void GenCodeVisitor::emitLValueAddr(Exp* e) {
     }
 
     if (auto fa = dynamic_cast<FieldAccessExp*>(e)) {
-        emitLValueAddr(fa->obj); // obtener dirección base del objeto
+        fa->obj->accept(this);
         out << " movq %rax, %rdx\n";
-        
-        TypeInfo* tobj = tipe.get(fa->obj); // tipo del objeto
 
+        TypeInfo* tobj = tipe.get(fa->obj);
         auto it = layouts.find(tobj->structName);
+        if (it == layouts.end()) {
+            throw runtime_error("layout no encontrado para struct en emitLValueAddr");
+        }
         int off = it->second.fieldOffset[fa->field];
 
         out << " leaq " << off << "(%rdx), %rax\n";
@@ -643,6 +690,7 @@ int GenCodeVisitor::generate(Program* p) {
 
     out << ".data\n";
     out << "print_int_fmt: .string \"%ld\\n\"\n";
+    out << "print_str_fmt: .string \"%s\\n\"\n";
 
     for (auto g : p->vdlist) {
         g->accept(this);
@@ -664,7 +712,35 @@ int GenCodeVisitor::visit(Program* p) {
 
 int GenCodeVisitor::visit(GlobalVarDec* vd) {
     constEnv.declare(vd->name);
-    out << vd->name << ": .quad 0\n";
+
+    if (!vd->type || vd->type->kind != T_ARRAY) {
+        long val = 0;
+        if (vd->value) {
+            ConstVisitor cv(&constEnv);
+            vd->value->accept(&cv);
+            if (!vd->value->cont) {
+                throw runtime_error("inicializador global no constante para '" + vd->name + "'");
+            }
+            val = vd->value->valor;
+        }
+        out << vd->name << ": .quad " << val << "\n";
+        return 0;
+    }
+
+    ArrayExp* arr = dynamic_cast<ArrayExp*>(vd->value);
+    if (!arr) {
+        throw runtime_error("inicializador global de array no es ArrayExp para '" + vd->name + "'");
+    }
+
+    out << vd->name << ":\n";
+    for (size_t i = 0; i < arr->elems.size(); i++) {
+        ConstVisitor cv(&constEnv);
+        arr->elems[i]->accept(&cv);
+        if (!arr->elems[i]->cont) {
+            throw runtime_error("elemento " + to_string(i) + " de array global '" + vd->name + "' no es constante");
+        }
+        out << " .quad " << arr->elems[i]->valor << "\n";
+    }
     return 0;
 }
 
@@ -715,22 +791,67 @@ int GenCodeVisitor::visit(LocalVarDec* vd) {
     constEnv.declare(vd->name);
 
     if (vd->value) {
-        vd->value->accept(this);
+        ConstVisitor cv(&constEnv);
+        vd->value->accept(&cv);
+
+        if (vd->value->cont == 1) {
+            constEnv.setConst(vd->name, vd->value->valor);
+            out << " movq $" << vd->value->valor << ", %rax\n";
+        } else {
+            constEnv.unsetConst(vd->name);
+            vd->value->accept(this);
+        }
+
         out << " movq %rax, " << offset << "(%rbp)\n";
+    } else {
+        constEnv.unsetConst(vd->name);
     }
 
     offset -= 8;
     return 0;
 }
 
-int GenCodeVisitor::visit(Body* b) {
+
+int GenCodeVisitor::visit(Body* body) {
     envStack.add_level();
-    for (auto d : b->declarations) d->accept(this);
-    for (auto s : b->StmList) s->accept(this);
+
+    struct Node {
+        int order;
+        LocalVarDec* d;
+        Stm* s;
+    };
+
+    vector<Node> merged;
+
+    for (auto d : body->declarations) {
+        Node n;
+        n.order = d->order;
+        n.d = d;
+        n.s = nullptr;
+        merged.push_back(n);
+    }
+
+    for (auto s : body->StmList) {
+        Node n;
+        n.order = s->order;
+        n.d = nullptr;
+        n.s = s;
+        merged.push_back(n);
+    }
+
+    sort(merged.begin(), merged.end(),
+         [](const Node& a, const Node& b) {
+             return a.order < b.order;
+         });
+
+    for (auto& n : merged) {
+        if (n.d) n.d->accept(this);
+        else if (n.s) n.s->accept(this);
+    }
+
     envStack.remove_level();
     return 0;
 }
-
 
 int GenCodeVisitor::visit(NumberExp* e) {
     out << " movq $" << e->value << ", %rax\n";
@@ -766,7 +887,6 @@ int GenCodeVisitor::visit(IdExp* e) {
         out << " movq " << e->value << "(%rip), %rax\n";
     return 0;
 }
-
 
 int GenCodeVisitor::visit(BinaryExp* b) {
     ConstVisitor cv(&constEnv);
@@ -826,21 +946,18 @@ int GenCodeVisitor::visit(ArrayExp* a) {
     int n = (int)a->elems.size();
     int bytes = n * 8;
 
-    // malloc(n * 8)
     out << " movq $" << bytes << ", %rdi\n";
     out << " call malloc@PLT\n";
-    out << " movq %rax, %r10\n";  // base del array
+    out << " movq %rax, %r10\n";
 
     for (int i = 0; i < n; i++) {
         a->elems[i]->accept(this);
         out << " movq %rax, " << (i * 8) << "(%r10)\n";
     }
 
-    // return pointer in %rax
     out << " movq %r10, %rax\n";
     return 0;
 }
-
 
 int GenCodeVisitor::visit(ArrayAccessExp* a) {
     a->arr->accept(this);
@@ -854,19 +971,22 @@ int GenCodeVisitor::visit(ArrayAccessExp* a) {
 
 int GenCodeVisitor::visit(StructInitExp* s) {
     auto it = layouts.find(s->nombre);
+    if (it == layouts.end()) {
+        throw runtime_error("layout no encontrado para struct en StructInitExp");
+    }
     StructLayout& lay = it->second;
 
     out << " movq $" << lay.sizeBytes << ", %rdi\n";
     out << " call malloc@PLT\n";
-    out << " movq %rax, %r10\n";
+    out << " movq %rax, %r11\n";
 
     for (size_t i = 0; i < s->fields.size(); i++) {
         int off = lay.fieldOffset[s->fields[i]];
         s->values[i]->accept(this);
-        out << " movq %rax, " << off << "(%r10)\n";
+        out << " movq %rax, " << off << "(%r11)\n";
     }
 
-    out << " movq %r10, %rax\n";
+    out << " movq %r11, %rax\n";
     return 0;
 }
 
@@ -885,29 +1005,26 @@ int GenCodeVisitor::visit(FieldAccessExp* f) {
     return 0;
 }
 
-static bool getVarName(Exp* e, string& out) {
+static bool getVarName(Exp* e, string& outName) {
     if (auto id = dynamic_cast<IdExp*>(e)) {
-        out = id->value;
+        outName = id->value;
         return true;
     }
     return false;
 }
-
 
 int GenCodeVisitor::visit(AssignStm* s) {
     ConstVisitor cv(&constEnv);
     s->value->accept(&cv);
 
     string var;
-    bool simpleVar = getVarName(s->left, var);
+    bool flag = getVarName(s->left, var);
 
-    if (simpleVar && s->value->cont == 1) {
-        // asignación a variable simple con constante
+    if (flag && s->value->cont == 1) {
         constEnv.setConst(var, s->value->valor);
         out << " movq $" << s->value->valor << ", %rax\n";
     } else {
-        // no es variable simple (array/struct) o no es constante
-        if (simpleVar) constEnv.unsetConst(var);
+        if (flag) constEnv.unsetConst(var);
         s->value->accept(this);
     }
 
@@ -927,13 +1044,40 @@ int GenCodeVisitor::visit(FcallStm* s) {
 }
 
 int GenCodeVisitor::visit(PrintStm* s) {
-    s->e->accept(this);
-    out << " movq %rax, %rsi\n";
-    out << " leaq print_int_fmt(%rip), %rdi\n";
-    out << " movl $0, %eax\n";
-    out << " call printf@PLT\n";
+    auto print = [&](Exp* e) {
+        e->accept(this);
+
+        TypeInfo* t = nullptr;
+        try {
+            t = tipe.get(e);
+        } catch (...) {
+            t = nullptr;
+        }
+
+        out << " movq %rax, %rsi\n";
+
+        if (t && t->kind == T_STRING) {
+            out << " leaq print_str_fmt(%rip), %rdi\n";
+        } else {
+            out << " leaq print_int_fmt(%rip), %rdi\n";
+        }
+
+        out << " movl $0, %eax\n";
+        out << " call printf@PLT\n";
+    };
+
+    if (s->args.empty()) {
+        print(s->pre);
+        return 0;
+    }
+
+    for (auto arg : s->args) {
+        print(arg);
+    }
+
     return 0;
 }
+
 
 int GenCodeVisitor::visit(ReturnStm* r) {
     r->value->accept(this);
@@ -948,12 +1092,11 @@ int GenCodeVisitor::visit(ForStm* f) {
     envStack.add_var(f->var, offset);
     offset -= 8;
 
-    // init
     f->start->accept(this);
     out << " movq %rax, " << slot << "(%rbp)\n";
 
     out << ".Lfor_" << lbl << ":\n";
-
+    
     f->finish->accept(this);
     out << " movq %rax, %rcx\n";
     out << " movq " << slot << "(%rbp), %rax\n";
@@ -969,7 +1112,6 @@ int GenCodeVisitor::visit(ForStm* f) {
     out << " movq " << slot << "(%rbp), %rax\n";
     out << " addq $1, %rax\n";
     out << " movq %rax, " << slot << "(%rbp)\n";
-
     out << " jmp .Lfor_" << lbl << "\n";
     out << ".Lendfor_" << lbl << ":\n";
     return 0;
@@ -989,7 +1131,6 @@ int GenCodeVisitor::visit(WhileStm* w) {
 }
 
 int GenCodeVisitor::visit(IfStm* i) {
-
     ConstVisitor cv(&constEnv);
     i->condition->accept(&cv);
 
@@ -1032,15 +1173,16 @@ int GenCodeVisitor::visit(IfStm* i) {
 
 
 int GenCodeVisitor::visit(StructStm* s) {
-    FieldAccessExp fa(s->object, s->field);
     s->value->accept(this);
     out << " pushq %rax\n";
+    FieldAccessExp fa(s->object, s->field);
     emitLValueAddr(&fa);
     out << " movq %rax, %rdx\n";
     out << " popq %rax\n";
     out << " movq %rax, (%rdx)\n";
     return 0;
 }
+
 
 int GenCodeVisitor::visit(ArrayStm* s) {
     ArrayAccessExp aa(s->array, s->index);

@@ -1,16 +1,41 @@
-fn main() {
-    let x = 4 * 5;
-    if (x == 20) {
-        println!(1);
-    } else {
-        println!(2);
+struct Sensor {
+    medidas:[i64;3]
+}
+
+fn procesar(s:Sensor) -> i64 {
+    let mut suma:i64 = 0;
+
+    for i in 0..3 {
+        suma = suma + s.medidas[i];
     }
 
-    x = 10;
+    return suma;
+}
 
-    if (x == 20) {
-        println!(3);
+fn main() {
+    let text : &str = "Sensor";
+    println!(text);
+    let s = Sensor { medidas:[3,4,5] };
+
+    let total = procesar(s);
+
+    for i in 10..=15 {
+        if (i<total){
+            println!("{}", i);
+        }
+    }
+
+    let x = 2 * 10 - 5;
+
+    if (x == 15) {
+        println!(2);
     } else {
-        println!(4);
+        println!(9);
+    }
+
+    if (0 > 1000) {
+        println!(444);
+    } else {
+        println!(555);
     }
 }

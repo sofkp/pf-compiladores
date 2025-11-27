@@ -1,5 +1,15 @@
+struct Perfil {
+    nombre:&str,
+    pais:&str
+}
+
+fn crear(n:&str, p:&str) -> Perfil {
+    let pf = Perfil { nombre:n, pais:p };
+    return pf;
+}
+
 fn main() {
-    for i in 0 ..= 3 {
-        println!(i);
-    }
+    let user = crear("flavia", "peru");
+    println!("{}", user.nombre);
+    println!("{}", user.pais);
 }

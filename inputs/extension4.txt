@@ -1,6 +1,29 @@
-fn printstr(x: i64) { println!(x); }
+struct Producto {
+    codigo:i64,
+    precio:i64,
+    stock:i64
+}
+
+fn mkprod(c:i64, p:i64, s:i64) -> Producto {
+    let pr = Producto { codigo:c, precio:p, stock:s };
+    return pr;
+}
+
+fn total(p:Producto) -> i64 {
+    return p.precio * p.stock;
+}
 
 fn main() {
-    let s = "hola";
-    println!(1);
+    let p1 = mkprod(1001, 25, 10);
+    let p2 = mkprod(2001, 40, 3);
+
+    println!("{}", total(p1));
+    println!("{}", total(p2));
+
+    let arr = [ total(p1), total(p2), 5 ];
+    println!("{}", arr[0]);
+    println!("{}", arr[1]);
+
+    arr[2] = arr[0] + arr[1];
+    println!("{}", arr[2]);
 }

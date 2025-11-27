@@ -12,18 +12,11 @@ private:
     int current;
 
 public:
-    // Constructor
     Scanner(const char* in_s);
-
-    // Retorna el siguiente token
     Token* nextToken();
-
-    // Destructor
     ~Scanner();
-
 };
 
-// Ejecutar scanner
 int ejecutar_scanner(Scanner* scanner,const string& InputFile);
 
 #endif // SCANNER_H

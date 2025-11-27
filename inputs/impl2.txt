@@ -1,8 +1,14 @@
 fn main() {
-    let x = 10;
-    if x > 5 {
-        println!(1);
-    } else {
-        println!(0);
-    }
+    let palabras = ["hola","mundo","utec"];
+    
+    println!("palabra 1");
+    println!("{}", palabras[0]);
+    println!("palabra 2");
+    println!("{}", palabras[1]);
+    println!("palabra 3");
+    println!("{}", palabras[2]);
+
+    palabras[2] = "compiladores";
+    println!("nueva palabra 3");
+    println!("{}", palabras[2]);
 }

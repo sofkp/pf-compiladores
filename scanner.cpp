@@ -6,58 +6,50 @@
 
 using namespace std;
 
-// -----------------------------
+
 // Constructor
-// -----------------------------
 Scanner::Scanner(const char* s): input(s), first(0), current(0) { 
-    }
+}
 
-// -----------------------------
-// Función auxiliar
-// -----------------------------
-
+// auxiliar
 bool is_white_space(char c) {
     return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
-// -----------------------------
-// nextToken: obtiene el siguiente token
-// -----------------------------
-
-
 Token* Scanner::nextToken() {
     Token* token;
 
-    // Saltar espacios en blanco
-    while (current < input.length() && is_white_space(input[current])) 
-        current++;
+    while (current < input.length() && is_white_space(input[current])) current++;
 
-    // Fin de la entrada
-    if (current >= input.length()) 
-        return new Token(Token::END);
+    if (current >= input.length()) return new Token(Token::END);
 
     char c = input[current];
 
     first = current;
 
-    // Números
+    // nums
     if (isdigit(c)) {
         current++;
-        while (current < input.length() && isdigit(input[current]))
-            current++;
+        while (current < input.length() && isdigit(input[current])) current++;
         token = new Token(Token::NUM, input, first, current - first);
     }
+
+    else if (c == '&') {
+        if (current + 3 < input.length() && input[current+1] == 's' && input[current+2] == 't' && input[current+3] == 'r') {
+            current += 4;
+            return new Token(Token::STRINGTYPE, input, first, current - first);
+        }
+    }
+
     // ID
     else if (isalpha(c)) {
         current++;
-        while (current < input.length() && isalnum(input[current]))
-            current++;
+        while (current < input.length() && isalnum(input[current])) current++;
         
         if (current < input.length() && input[current] == '!') {
             current++;
             string lexema = input.substr(first, current - first);
-            if (lexema == "println!") 
-                return new Token(Token::PRINT, input, first, current - first);
+            if (lexema == "println!") return new Token(Token::PRINT, input, first, current - first);
         }
         string lexema = input.substr(first, current - first);
         if (lexema=="if") return new Token(Token::IF, input, first, current - first);
@@ -76,27 +68,25 @@ Token* Scanner::nextToken() {
         else if (lexema=="static") return new Token(Token::STATIC, input, first, current - first);
         else if (lexema=="return") return new Token(Token::RETURN, input, first, current - first);
         else if (lexema=="struct") return new Token(Token::STRUCT, input, first, current - first);
-        else if (lexema=="string") return new Token(Token::STRINGTYPE, input, first, current - first);
         else return new Token(Token::ID, input, first, current - first);
     }
     // Operadores
-    else if (c=='+' || c=='-' || c=='*' || c=='/' || c=='(' || c==')' || c=='{' || c=='}' ||
-            c==';' || c==',' || c==':' || c=='<' || c=='>' || c=='=' || c=='.' ||  c=='[' ||
+    else if (c=='+' || c=='-' || c=='*' || c=='/' || c=='(' || c==')' || c=='{' || c=='}' || c==';' || c==',' || c==':' || c=='<' ||c=='>' || c=='=' || c=='.' ||  c=='[' ||
             c==']' || c=='"' || c=='.') {
         switch (c) {
-            case '<': 
+            case '<':
             if (current + 1 < input.length() && input[current+1]=='='){
                 current++;
                 token = new Token(Token::LE, input, first, current + 1 - first);
             }
-            else{token = new Token(Token::LT, c);} 
+            else {token = new Token(Token::LT, c);}
             break;
             case '>': 
             if (current + 1 < input.length() && input[current+1]=='='){
                 current++;
                 token = new Token(Token::GE, input, first, current + 1 - first);
             }
-            else{token = new Token(Token::GT, c);} 
+            else {token = new Token(Token::GT, c);} 
             break;
             case '+': token = new Token(Token::PLUS,  c); break;
             case '-': 
@@ -130,21 +120,16 @@ Token* Scanner::nextToken() {
                     token = new Token(Token::REQ, input, first, current + 1 - first);
                 }
                 else token = new Token(Token::RG, input, first, current + 1 - first);
-            }else {
-                token = new Token(Token::DOT, '.');
-            }
+            }else {token = new Token(Token::DOT, '.');}
             break;
             case '"': {
                 current++;
-                while (current < input.length() && input[current] != '"') {
-                    current++;
-                }
+                while (current < input.length() && input[current] != '"') {current++;}
                 current++; 
                 return new Token(Token::STRING, input, first+1, current - first-2);
             } break;
             case '[': token = new Token(Token::LBRACKET,c); break;
             case ']': token = new Token(Token::RBRACKET,c); break;
-
         }
         current++;
     }
@@ -161,14 +146,14 @@ Token* Scanner::nextToken() {
 
 
 
-// -----------------------------
+
 // Destructor
-// -----------------------------
+
 Scanner::~Scanner() { }
 
-// -----------------------------
+
 // Función de prueba
-// -----------------------------
+
 
 int ejecutar_scanner(Scanner* scanner, const string& InputFile) {
     Token* tok;
@@ -183,7 +168,8 @@ int ejecutar_scanner(Scanner* scanner, const string& InputFile) {
     size_t dot = base.find_last_of(".");
     if (dot != string::npos) base = base.substr(0, dot);
 
-    string OutputFileName = outDir + base + "tokens_.txt";
+    // Nombre de salida esperado: outputs/<base>_tokens.txt
+    string OutputFileName = outDir + base + "_tokens.txt";
 
     ofstream outFile(OutputFileName);
     if (!outFile.is_open()) {

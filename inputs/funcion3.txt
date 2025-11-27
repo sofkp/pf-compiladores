@@ -5,7 +5,7 @@ fn buildarr(a:i64, b:i64, c:i64) -> [i64;3] {
 
 fn main() {
     let z = buildarr(3,4,5);
-    println!(z[0]);
-    println!(z[1]);
-    println!(z[2]);
+    println!("{}", z[0]);
+    println!("{}", z[1]);
+    println!("{}", z[2]);
 }

@@ -1,5 +1,6 @@
 .data
 print_int_fmt: .string "%ld\n"
+print_str_fmt: .string "%s\n"
 .text
 .globl makepair
 makepair:
@@ -10,12 +11,12 @@ makepair:
  movq %rsi, -16(%rbp)
  movq $16, %rdi
  call malloc@PLT
- movq %rax, %r10
+ movq %rax, %r11
  movq -8(%rbp), %rax
- movq %rax, 0(%r10)
+ movq %rax, 0(%r11)
  movq -16(%rbp), %rax
- movq %rax, 8(%r10)
- movq %r10, %rax
+ movq %rax, 8(%r11)
+ movq %r11, %rax
  movq %rax, -24(%rbp)
  movq -24(%rbp), %rax
  jmp .Lend_makepair

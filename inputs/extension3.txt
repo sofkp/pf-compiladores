@@ -1,10 +1,11 @@
-struct Data {
-    val:[i64;3]
+struct Registro {
+    notas:[i64;3]
 }
 
 fn main() {
-    let d = Data { val:[5,6,7] };
-    println!(d.val[0]);
-    d.val[1] = 100;
-    println!(d.val[1]);
+    let r = Registro { notas:[15,18,20] };
+    println!("{}", r.notas[0]);
+
+    r.notas[0] = r.notas[1] + r.notas[2];
+    println!("{}", r.notas[0]);
 }

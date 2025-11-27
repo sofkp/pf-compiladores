@@ -1,6 +1,7 @@
 fn main() {
-    let arr = [1,2,3,4];
-    println!(arr[2]);
-    arr[2] = 99;
-    println!(arr[2]);
+    let nums = [10,20,30];
+    println!("{}", nums[1]);
+
+    nums[1] = nums[0] + nums[2];
+    println!("{}", nums[1]);
 }

@@ -2,10 +2,8 @@ import os
 import subprocess
 import shutil
 
-# Archivos c++
 programa = ["main.cpp", "scanner.cpp", "token.cpp", "parser.cpp", "ast.cpp", "visitor.cpp"]
 
-# Compilar
 compile = ["g++"] + programa
 print("Compilando:", " ".join(compile))
 result = subprocess.run(compile, capture_output=True, text=True)
@@ -16,13 +14,12 @@ if result.returncode != 0:
 
 print("Compilación exitosa")
 
-# Ejecutar
 input_dir = "inputs"
 output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 for i in range(1, 6):
-    filename = f"impl{i}.txt"
+    filename = f"op{i}.txt"
     filepath = os.path.join(input_dir, filename)
 
     if os.path.isfile(filepath):
@@ -33,10 +30,8 @@ for i in range(1, 6):
         if result.returncode != 0:
             print(f"[op{i}] ERROR:\n{result.stderr}")
 
-        # Archivos generados
-        tokens_file = os.path.join(input_dir, f"funcion{i}.s")  # se crea en inputs/
+        tokens_file = os.path.join(input_dir, f"funcion{i}.s")
     
-        # Mover archivo de tokens si existe
         if os.path.isfile(tokens_file):
             dest_tokens = os.path.join(output_dir, f"funcion_{i}.s")
             shutil.move(tokens_file, dest_tokens)

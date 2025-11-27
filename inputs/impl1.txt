@@ -1,6 +1,9 @@
+struct Animal {
+    nombre: &str,
+    edad:i64
+}
+
 fn main() {
-    let a = 5;
-    let b = 10;
-    let c = a + b;
-    println!(c);
+    let a = Animal { nombre:"gato", edad:2 };
+    println!("{}", a.edad);
 }

@@ -1,15 +1,50 @@
-struct Node {
-    x:i64,
-    y:i64
+struct Turno {
+    produccion:[i64;6]
 }
 
-fn mk() -> Node {
-    let n = Node { x:10, y:20 };
-    return n;
+struct Reporte {
+    total:i64,
+    promedio:i64
+}
+
+fn combinar(a:Turno, b:Turno) -> Turno {
+    let c = Turno {
+        produccion:[
+            a.produccion[0] + b.produccion[0],
+            a.produccion[1] + b.produccion[1],
+            a.produccion[2] + b.produccion[2],
+            a.produccion[3] + b.produccion[3],
+            a.produccion[4] + b.produccion[4],
+            a.produccion[5] + b.produccion[5]
+        ]
+    };
+    return c;
+}
+
+fn analizar(t:Turno) -> Reporte {
+    let mut total:i64 = 0;
+
+    for i in 0..6 {
+        total = total + t.produccion[i];
+    }
+
+    let prom = total / 6;
+
+    let rep = Reporte {
+        total:total,
+        promedio:prom
+    };
+
+    return rep;
 }
 
 fn main() {
-    let r = mk();
-    println!(r.x);
-    println!(r.y);
+    let t1 = Turno { produccion:[10,20,15,30,25,18] };
+    let t2 = Turno { produccion:[5,18,12,22,35,10] };
+
+    let comb = combinar(t1, t2);
+    let rep = analizar(comb);
+
+    println!("{}", rep.total);
+    println!("{}", rep.promedio);
 }

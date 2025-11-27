@@ -29,7 +29,8 @@ enum TypeKind {
     T_STRING,
     T_ARRAY,
     T_STRUCT,
-    T_UNKNOWN
+    T_UNKNOWN,
+    T_RANGE
 };
 
 struct TypeInfo {
@@ -102,6 +103,7 @@ public:
     vector<Exp*> values;
 
     StructInitExp(string, vector<string>, vector<Exp*>);
+    StructInitExp(string n) : nombre(n) {}
     ~StructInitExp();
     int accept(Visitor* visitor);
 };
@@ -146,6 +148,7 @@ public:
 
 class Stm {
 public:
+    int order = 0;
     virtual int accept(Visitor* visitor) = 0;
     virtual ~Stm() = 0;
 };
@@ -171,12 +174,14 @@ public:
 
 class PrintStm: public Stm {
 public:
-    Exp* e;
+    Exp* pre;
+    vector<Exp*> args;
 
-    PrintStm(Exp*);
+    PrintStm(Exp* pre, const vector<Exp*> a);
     ~PrintStm();
     int accept(Visitor* visitor);
 };
+
 
 class ReturnStm: public Stm {
 public:
@@ -227,6 +232,7 @@ public:
     string name;
     Exp* value;
     TypeInfo* type;
+    int order = 0;
 
     LocalVarDec(string, TypeInfo*, bool, Exp*);
     ~LocalVarDec();
@@ -277,6 +283,15 @@ public:
     ~IfStm();
     int accept(Visitor* visitor);
 };
+
+class BlockStm : public Stm {
+public:
+    Body* body;
+
+    BlockStm(Body* b) : body(b) {}
+    int accept(Visitor* visitor);
+};
+
 
 class FunDec{
 public:

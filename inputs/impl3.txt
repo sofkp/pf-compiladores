@@ -1,12 +1,20 @@
-static mut MAX: i32 = 10;
+struct Libro {
+    titulo:&str,
+    autores:[&str;3]
+}
 
-fn main() -> i32 {
-    let mut i: i32 = 0;
+fn main() {
+    let l = Libro {
+        titulo:"Compilers 101",
+        autores:["Aho","Sethi","Ullman"]
+    };
 
-    while i < MAX {
-        println!(i);
-        i = i + 1;
-    }
+    println!("titulo");
+    println!("{}", l.titulo);
+    println!("autor 1");
+    println!("{}", l.autores[1]);
 
-    return 0;
+    l.autores[1] = "Julio Yarasca";
+    println!("autor 1 nuevo");
+    println!("{}", l.autores[1]);
 }

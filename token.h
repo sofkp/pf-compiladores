@@ -10,20 +10,20 @@ class Token {
 public:
     // Tipos de token
     enum Type {
-        PLUS,    // +
-        MINUS,   // -
-        MUL,     // *
-        DIV,     // /
-        LT, //<
+        PLUS,
+        MINUS,
+        MUL,
+        DIV,
+        LT,
         LE, //<=
         EQ, //==
         GT, //>
         GE, //>=
-        LPAREN,  // (
-        RPAREN,  // )
-        NUM,     // Número
-        ERR,     // Error
-        ID,      // ID
+        LPAREN, // (
+        RPAREN, // )
+        NUM,
+        ERR, // Error
+        ID,
         TRUE,
         FALSE,
         LET,
@@ -35,20 +35,20 @@ public:
         IF,
         ELSE,
         FOR,
-        RG, //..
-        REQ, //..=
+        RG,
+        REQ,
         IN,
-        LBRACE, //{
-        RBRACE, //}
+        LBRACE,
+        RBRACE,
         WHILE,
         FN,
-        ARROW, //->
+        ARROW,
         I32,
         I64,
         BOOL,
         STATIC,
         RETURN,
-        PRINT, //println!
+        PRINT,
         END,
         LBRACKET,
         RBRACKET,
@@ -58,16 +58,13 @@ public:
         DOT
     };
 
-    // Atributos
     Type type;
     string text;
 
-    // Constructores
     Token(Type type);
     Token(Type type, char c);
     Token(Type type, const string& source, int first, int last);
 
-    // Sobrecarga de operadores de salida
     friend ostream& operator<<(ostream& outs, const Token& tok);
     friend ostream& operator<<(ostream& outs, const Token* tok);
 };

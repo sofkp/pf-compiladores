@@ -1,4 +1,8 @@
 fn main() {
-    let x = 10 * 2;
-    println!(x);
+    let a = 10 + 20 * 3 - (4 * 5);
+    if (a * 3 == 24) {
+        println!(1);
+    } else {
+        println!(2);
+    }
 }
