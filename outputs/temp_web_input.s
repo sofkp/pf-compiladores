@@ -7,9 +7,11 @@ main:
  pushq %rbp
  movq %rsp, %rbp
  subq $16, %rsp
- movq $50, %rax
+ movq $10, %rax
  movq %rax, -8(%rbp)
- movq $2, %rax
+ movq $20, %rax
+ movq %rax, -16(%rbp)
+ movq $10, %rax
  movq %rax, %rsi
  leaq print_int_fmt(%rip), %rdi
  movl $0, %eax

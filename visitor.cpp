@@ -641,7 +641,7 @@ void GenCodeVisitor::buildStructLayouts(Program* p) {
     }
 }
 
-void GenCodeVisitor::emitLValueAddr(Exp* e) {
+void GenCodeVisitor::getAddr(Exp* e) {
     if (auto id = dynamic_cast<IdExp*>(e)) {
         int off;
         if (envStack.lookup(id->value, off)) {
@@ -669,7 +669,7 @@ void GenCodeVisitor::emitLValueAddr(Exp* e) {
         TypeInfo* tobj = tipe.get(fa->obj);
         auto it = layouts.find(tobj->structName);
         if (it == layouts.end()) {
-            throw runtime_error("layout no encontrado para struct en emitLValueAddr");
+            throw runtime_error("layout no encontrado para struct en getAddr");
         }
         int off = it->second.fieldOffset[fa->field];
 
@@ -677,7 +677,7 @@ void GenCodeVisitor::emitLValueAddr(Exp* e) {
         return;
     }
 
-    throw runtime_error("lvalue inválido en emitLValueAddr");
+    throw runtime_error("lvalue inválido en getAddr");
 }
 
 
@@ -1028,7 +1028,7 @@ int GenCodeVisitor::visit(AssignStm* s) {
     }
 
     out << " pushq %rax\n";
-    emitLValueAddr(s->left);
+    getAddr(s->left);
     out << " movq %rax, %rdx\n";
     out << " popq %rax\n";
     out << " movq %rax, (%rdx)\n";
@@ -1175,7 +1175,7 @@ int GenCodeVisitor::visit(StructStm* s) {
     s->value->accept(this);
     out << " pushq %rax\n";
     FieldAccessExp fa(s->object, s->field);
-    emitLValueAddr(&fa);
+    getAddr(&fa);
     out << " movq %rax, %rdx\n";
     out << " popq %rax\n";
     out << " movq %rax, (%rdx)\n";
@@ -1187,7 +1187,7 @@ int GenCodeVisitor::visit(ArrayStm* s) {
     ArrayAccessExp aa(s->array, s->index);
     s->value->accept(this);
     out << " pushq %rax\n";
-    emitLValueAddr(&aa);
+    getAddr(&aa);
     out << " movq %rax, %rdx\n";
     out << " popq %rax\n";
     out << " movq %rax, (%rdx)\n";

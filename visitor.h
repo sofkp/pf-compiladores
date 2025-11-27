@@ -174,7 +174,7 @@ public:
     GenCodeVisitor(ostream& o);
 
     void buildStructLayouts(Program* p);
-    void emitLValueAddr(Exp* e);
+    void getAddr(Exp* e);
 
     int generate(Program* p);
 

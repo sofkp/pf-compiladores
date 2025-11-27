@@ -1,8 +1,10 @@
 fn main() {
-    let a = 10 + 20 * 3 - (4 * 5);
-    if (a * 3 == 24) {
-        println!(1);
+    let x = 3 + 7;
+    let y = x * 2;
+
+    if (y == 20) {
+        println!(10);
     } else {
-        println!(2);
+        println!(99);
     }
 }
